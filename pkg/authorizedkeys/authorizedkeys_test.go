@@ -1,16 +1,20 @@
-package collector
+package authorizedkeys
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/utilitywarehouse/github-sshkey-provider/pkg/collector"
+)
 
 func TestGenerateAuthorizedKeysFile(t *testing.T) {
-	ui := []UserInfo{
-		UserInfo{
+	ui := []collector.UserInfo{
+		collector.UserInfo{
 			Login: "user00",
 			ID:    999998,
 			Name:  "User Zero",
 			Keys:  "ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string_for_user00",
 		},
-		UserInfo{
+		collector.UserInfo{
 			Login: "user01",
 			ID:    999999,
 			Name:  "User One",
@@ -29,7 +33,7 @@ ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string_for_user01
 
 # END: github_key_provider
 `
-	ak, err := GenerateAuthorizedKeysFile(ui)
+	ak, err := GenerateSnippet(ui)
 
 	if err != nil {
 		t.Errorf("GenerateAuthorizedKeysFile returned error: %v", err)

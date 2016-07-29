@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/utilitywarehouse/github-sshkey-provider/pkg/authorizedkeys"
 	"github.com/utilitywarehouse/github-sshkey-provider/pkg/collector"
 	"github.com/utilitywarehouse/github-sshkey-provider/pkg/simplelog"
 	"github.com/utilitywarehouse/github-sshkey-provider/pkg/transport"
@@ -65,7 +66,7 @@ func collectAndPublishKeys(wg *sync.WaitGroup) {
 			return
 		}
 
-		authorizedKeysSnippet, err := collector.GenerateAuthorizedKeysFile(teamMembers)
+		authorizedKeysSnippet, err := authorizedkeys.GenerateSnippet(teamMembers)
 		if err != nil {
 			simplelog.Info("Template generation failed: %v", err)
 			return
