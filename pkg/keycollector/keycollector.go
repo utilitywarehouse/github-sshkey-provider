@@ -1,10 +1,8 @@
 package keycollector
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -14,26 +12,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const (
-	authorizedKeysTemplate = `
-# BEGIN: github_key_provider
-
-{{ range $index, $user := . -}}
-# SSH keys for {{ $user.Login }} (
-{{- if $user.Name -}}
-    {{ $user.Name }}
-{{- else -}}
-    unknown name
-{{- end }})
-{{ $user.Keys }}
-
-{{ end -}}
-
-# END: github_key_provider
-`
-)
-
-type userInfo struct {
+// UserInfo is a struct that contains information about a GitHub user,
+// including Login Name and SSH Keys.
+type UserInfo struct {
 	Login string
 	ID    int
 	Name  string
@@ -63,48 +44,30 @@ func NewKeyCollector(githubAccessToken string) *KeyCollector {
 	}
 }
 
-// GetTeamMemberAuthorizedKeys returns a snippet of SSH keys that can be
-// inserted in an authorized_keys file in order to provide SSH access to
-// members of the specified Team of a GitHub organization.
-func (k *KeyCollector) GetTeamMemberAuthorizedKeys(organizationName string, teamName string) (string, error) {
-	results, err := k.getTeamMembers(organizationName, teamName)
-	if err != nil {
-		return "", err
-	}
-
-	t := template.New("authorized_keys")
-	t, err = t.Parse(authorizedKeysTemplate)
-	if err != nil {
-		return "", nil
-	}
-
-	var output bytes.Buffer
-	t.Execute(&output, results)
-
-	return output.String(), nil
-}
-
-func (k *KeyCollector) getTeamMembers(organizationName string, teamName string) ([]userInfo, error) {
+// GetTeamMemberInfo returns a slice of UserInfo structs, which contains
+// information on the users that belong to the specified GitHub team of
+// the specified organization.
+func (k *KeyCollector) GetTeamMemberInfo(organizationName string, teamName string) ([]UserInfo, error) {
 	teamID, err := k.getTeamID(organizationName, teamName)
 	if err != nil {
 		return nil, err
 	}
 
-	memberInfo, err := k.getTeamMembersInfo(teamID)
+	memberInfo, err := k.getTeamMembers(teamID)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, mi := range memberInfo {
-		k.setUserName(&mi)
-		k.setUserKeys(&mi)
+	for i := range memberInfo {
+		k.setUserName(&memberInfo[i])
+		k.setUserKeys(&memberInfo[i])
 	}
 
 	return memberInfo, nil
 }
 
-func (k *KeyCollector) getTeamMembersInfo(teamID int) ([]userInfo, error) {
-	memberInfo := []userInfo{}
+func (k *KeyCollector) getTeamMembers(teamID int) ([]UserInfo, error) {
+	memberInfo := []UserInfo{}
 
 	ltmOpts := &github.OrganizationListTeamMembersOptions{
 		Role: "all",
@@ -121,7 +84,7 @@ func (k *KeyCollector) getTeamMembersInfo(teamID int) ([]userInfo, error) {
 		}
 
 		for _, tm := range teamMembers {
-			ui := userInfo{
+			ui := UserInfo{
 				Login: *tm.Login,
 				ID:    *tm.ID,
 				Name:  "unknown name",
@@ -139,7 +102,7 @@ func (k *KeyCollector) getTeamMembersInfo(teamID int) ([]userInfo, error) {
 	return memberInfo, nil
 }
 
-func (k *KeyCollector) setUserName(ui *userInfo) {
+func (k *KeyCollector) setUserName(ui *UserInfo) {
 	user, _, err := k.githubClient.Users.GetByID(ui.ID)
 	if err != nil {
 		simplelog.Info("Could not fetch details for user '%s': %v", ui.Login, err)
@@ -148,7 +111,7 @@ func (k *KeyCollector) setUserName(ui *userInfo) {
 	}
 }
 
-func (k *KeyCollector) setUserKeys(ui *userInfo) {
+func (k *KeyCollector) setUserKeys(ui *UserInfo) {
 	keys, err := k.getUserKeys(ui.Login)
 	if err != nil {
 		simplelog.Info("Could not fetch keys for user '%s': %s", ui.Login, err.Error())
@@ -186,6 +149,7 @@ func (k *KeyCollector) getTeamID(organizationName string, teamName string) (int,
 	simplelog.Debug("Fetching list of teams for organization '%s'", organizationName)
 
 	orgTeams, _, err := k.githubClient.Organizations.ListTeams(organizationName, nil)
+
 	if err != nil {
 		return -1, err
 	}

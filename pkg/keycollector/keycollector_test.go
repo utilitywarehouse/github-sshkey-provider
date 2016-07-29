@@ -18,31 +18,27 @@ var (
 	// testMux is the HTTP request multiplexer used with the test server
 	testMux *http.ServeMux
 
-	// testGithubClient is the GitHub client being tested
-	testGithubClient *github.Client
-
-	// testHTTPClient is the HTTP client being tested
-	testHTTPClient *http.Client
-
 	// testKeyCollector is the KeyCollector being tested
 	testKeyCollector *KeyCollector
+
+	// testGithubClient is the GitHub client being tested (used in testKeyCollector)
+	testGithubClient *github.Client
+
+	// testHTTPClient is the HTTP client being tested (used in testKeyCollector)
+	testHTTPClient *http.Client
 )
 
-// setup sets up a test HTTP server along with a github.Client that is
-// configured to talk to that test server.  Tests should register handlers on
-// mux which provide mock responses for the API method being tested.
+// mockSetup sets up the test HTTP server along with a test KeyCollector instance
+// configured to talk to that test server
 func mockSetup() {
-	// test server
 	testMux = http.NewServeMux()
 	testServer = httptest.NewServer(testMux)
 
-	// github client configured to use test server
 	testGithubClient = github.NewClient(nil)
 	u, _ := url.Parse(testServer.URL)
 	testGithubClient.BaseURL = u
 	testGithubClient.UploadURL = u
 
-	// keycollector client configured to use test server
 	testKeyCollector = &KeyCollector{
 		githubClient:  testGithubClient,
 		httpClient:    &http.Client{},
@@ -50,72 +46,157 @@ func mockSetup() {
 	}
 }
 
-// teardown closes the test HTTP server.
+// mockTeardown closes the test HTTP server
 func mockTeardown() {
 	testServer.Close()
 }
 
-func TestKeyCollector_getTeamID(t *testing.T) {
-	mockSetup()
-	defer mockTeardown()
-
-	testMux.HandleFunc("/orgs/none/teams", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `[{
-            "name": "Owners",
-            "id": 888888
-        }]`)
-	})
-
-	id, err := testKeyCollector.getTeamID("none", "Owners")
-	if err != nil {
-		t.Errorf("KeyCollector.getTeamID returned error: %v", err)
-	}
-
-	if id != 888888 {
-		t.Errorf("KeyCollector.getTeamID returned ID %d, wanted 888888", id)
+func mockInstallHandlers(handlers []string) {
+	for _, h := range handlers {
+		switch h {
+		case "orgTeams":
+			testMux.HandleFunc("/orgs/none/teams", func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, `[{"name": "Owners", "id": 888888}]`)
+			})
+		case "userKeys":
+			testMux.HandleFunc("/user.keys", func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, `ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string`)
+			})
+		case "userInfo":
+			testMux.HandleFunc("/user/999999", func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, `{"id": 999999, "name": "User Name"}`)
+			})
+		case "teamUserList":
+			// cannot be specific on the path for OrganizationListTeamMembersOptions
+			// because it contains URL parameters which the mux won't handle properly
+			// eg. "teams/888888/members?per_page=100&role=all"
+			// all the other endpoints have been configured previously and so this
+			// generic catch-all handler will only ever respond to the desired call
+			testMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, `[{"login": "user", "id": 999999}]`)
+			})
+		}
 	}
 }
 
-func TestKeyCollector_getUserKeys(t *testing.T) {
+func TestKeyCollector_GetTeamMemberInfo(t *testing.T) {
+	mockSetup()
+	mockInstallHandlers([]string{"orgTeams", "userKeys", "userInfo", "teamUserList"})
+	defer mockTeardown()
+
+	miExpected := []UserInfo{
+		UserInfo{
+			Login: "user",
+			ID:    999999,
+			Name:  "User Name",
+			Keys:  "ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string",
+		},
+	}
+
+	mi, err := testKeyCollector.GetTeamMemberInfo("none", "Owners")
+	if err != nil {
+		t.Errorf("KeyCollector.GetTeamMemberInfo returned error: %v", err)
+	}
+
+	if !reflect.DeepEqual(mi, miExpected) {
+		t.Errorf("KeyCollector.GetTeamMemberInfo returned unexpected value: %v", mi)
+	}
+}
+
+func TestKeyCollector_GetTeamMemberInfo_getTeamIDError(t *testing.T) {
+	mockSetup()
+	defer mockTeardown()
+
+	mi, err := testKeyCollector.GetTeamMemberInfo("none", "Owners")
+	if err == nil {
+		t.Errorf("KeyCollector.GetTeamMemberInfo should have returned an error")
+	}
+
+	if mi != nil {
+		t.Errorf("KeyCollector.GetTeamMemberInfo returned unexpected value: %v", mi)
+	}
+}
+
+func TestKeyCollector_GetTeamMemberInfo_getTeamIDUnknown(t *testing.T) {
+	mockSetup()
+	testMux.HandleFunc("/orgs/none/teams", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `[{
+                "name": "Owners",
+                "id": 888888
+            }]`)
+	})
+	defer mockTeardown()
+
+	mi, err := testKeyCollector.GetTeamMemberInfo("none", "UnkownTeam")
+	if err == nil {
+		t.Errorf("KeyCollector.GetTeamMemberInfo should have returned an error")
+	}
+
+	if mi != nil {
+		t.Errorf("KeyCollector.GetTeamMemberInfo returned unexpected value: %v", mi)
+	}
+}
+
+func TestKeyCollector_GetTeamMemberInfo_getTeamMembersError(t *testing.T) {
+	mockSetup()
+	mockInstallHandlers([]string{"orgTeams"})
+	defer mockTeardown()
+
+	mi, err := testKeyCollector.GetTeamMemberInfo("none", "Owners")
+	if err == nil {
+		t.Errorf("KeyCollector.GetTeamMemberInfo should have returned an error")
+	}
+
+	if mi != nil {
+		t.Errorf("KeyCollector.GetTeamMemberInfo returned unexpected value: %v", mi)
+	}
+}
+
+func TestKeyCollector_getUserKeys_error(t *testing.T) {
+	mi, err := testKeyCollector.getUserKeys("")
+	if err == nil {
+		t.Errorf("KeyCollector.getUserKeys should have returned an error")
+	}
+
+	if mi != "" {
+		t.Errorf("KeyCollector.getUserKeys returned unexpected value: %v", mi)
+	}
+}
+
+func TestKeyCollector_getUserKeys_notFound(t *testing.T) {
 	mockSetup()
 	defer mockTeardown()
 
 	testMux.HandleFunc("/user.keys", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string`)
+		fmt.Fprint(w, `Not Found`)
 	})
 
-	keys, err := testKeyCollector.getUserKeys("user")
-	if err != nil {
-		t.Errorf("KeyCollector.getUserKeys returned error: %v", err)
+	mi, err := testKeyCollector.getUserKeys("user")
+	if err == nil {
+		t.Errorf("KeyCollector.getUserKeys should have returned an error")
 	}
 
-	if keys != "ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string" {
-		t.Errorf("KeyCollector.getUserKeys returned unexpected value: %s", keys)
+	if mi != "" {
+		t.Errorf("KeyCollector.getUserKeys returned unexpected value: %v", mi)
+	}
+
+	if err.Error() != "Response was 'Not Found'" {
+		t.Errorf("KeyCollector.getUserKeys returned an unexpected error: %v", err)
 	}
 }
 
-func TestKeyCollector_setUserName(t *testing.T) {
-	mockSetup()
-	defer mockTeardown()
-
-	testMux.HandleFunc("/user/999999", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{
-            "id": 999999,
-            "name": "User Name"
-        }`)
-	})
-
-	ui := userInfo{
+func TestKeyCollector_setUserName_error(t *testing.T) {
+	ui := UserInfo{
 		Login: "user",
 		ID:    999999,
 		Name:  "unknown name",
 		Keys:  "",
 	}
 
-	uiExpected := userInfo{
+	uiExpected := UserInfo{
 		Login: "user",
 		ID:    999999,
-		Name:  "User Name",
+		Name:  "unknown name",
 		Keys:  "",
 	}
 
@@ -126,64 +207,24 @@ func TestKeyCollector_setUserName(t *testing.T) {
 	}
 }
 
-func TestKeyCollector_setUserKeys(t *testing.T) {
-	mockSetup()
-	defer mockTeardown()
-
-	testMux.HandleFunc("/user.keys", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string`)
-	})
-
-	ui := userInfo{
+func TestKeyCollector_setUserKeys_error(t *testing.T) {
+	ui := UserInfo{
 		Login: "user",
 		ID:    999999,
 		Name:  "unknown name",
 		Keys:  "",
 	}
 
-	uiExpected := userInfo{
+	uiExpected := UserInfo{
 		Login: "user",
 		ID:    999999,
 		Name:  "unknown name",
-		Keys:  "ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string",
+		Keys:  "",
 	}
 
 	testKeyCollector.setUserKeys(&ui)
 
 	if !reflect.DeepEqual(ui, uiExpected) {
 		t.Errorf("KeyCollector.setUserKeys returned unexpected value: %v", ui)
-	}
-}
-
-func TestKeyCollector_getTeamMembersInfo(t *testing.T) {
-	mockSetup()
-	defer mockTeardown()
-
-	// cannot be very specific on the path here because it contains parameters,
-	// eg. "teams/888888/members?per_page=100&role=all" and so the mux will
-	// have to handle everything ("/")
-	testMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `[{
-            "login": "user",
-            "id": 999999
-        }]`)
-	})
-
-	miExpected := []userInfo{
-		userInfo{
-			Login: "user",
-			ID:    999999,
-			Name:  "unknown name",
-			Keys:  "",
-		},
-	}
-
-	mi, err := testKeyCollector.getTeamMembersInfo(888888)
-	if err != nil {
-		t.Errorf("KeyCollector.getTeamMembersInfo returned error: %v", err)
-	}
-
-	if !reflect.DeepEqual(mi, miExpected) {
-		t.Errorf("KeyCollector.getTeamMembersInfo returned unexpected value: %v", mi)
 	}
 }
