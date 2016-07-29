@@ -1,4 +1,4 @@
-package keycollector
+package collector
 
 import (
 	"fmt"
