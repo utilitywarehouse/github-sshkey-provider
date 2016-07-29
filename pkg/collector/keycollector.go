@@ -124,7 +124,7 @@ func (k *KeyCollector) getUserKeys(userLogin string) (string, error) {
 	// Instead of using github.Users.ListKeys() which calls the GitHub API and is
 	// a throttled request, we simply fetch them from the public URL that is
 	// provided by GitHub.
-	simplelog.Info("Fetching keys for user '%s'", userLogin)
+	simplelog.Debug("Fetching keys for user '%s'", userLogin)
 
 	response, err := k.httpClient.Get(fmt.Sprintf(k.githubKeysURL, userLogin))
 	if err != nil {

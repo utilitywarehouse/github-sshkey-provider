@@ -7,16 +7,16 @@ import (
 
 // RedisTransporter implements the Transporter interface with a redis backend
 type RedisTransporter struct {
-	host    string
-	channel string
-	pubsub  redis.PubSubConn
+	host        string
+	channelName string
+	pubsub      redis.PubSubConn
 }
 
 // NewRedisTransporter returns an instantiated RedisTransporter struct
 func NewRedisTransporter(host string, channel string) *RedisTransporter {
 	return &RedisTransporter{
-		host:    host,
-		channel: channel,
+		host:        host,
+		channelName: channel,
 	}
 }
 
@@ -29,7 +29,7 @@ func (t *RedisTransporter) Publish(message string) error {
 	}
 	defer conn.Close()
 
-	n, err := conn.Do("PUBLISH", t.channel, message)
+	n, err := conn.Do("PUBLISH", t.channelName, message)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (t *RedisTransporter) Listen(callback func(string) error) error {
 // StopListening instructs the RedisTransporter to unsubscribe from the channel
 // and disconnect from the redis host
 func (t *RedisTransporter) StopListening() error {
-	return t.pubsub.Unsubscribe(t.channel)
+	return t.pubsub.Unsubscribe(t.channelName)
 }
 
 func (t *RedisTransporter) initPubSubConnection() error {
@@ -83,5 +83,5 @@ func (t *RedisTransporter) initPubSubConnection() error {
 
 	t.pubsub = redis.PubSubConn{Conn: connection}
 
-	return t.pubsub.Subscribe(t.channel)
+	return t.pubsub.Subscribe(t.channelName)
 }

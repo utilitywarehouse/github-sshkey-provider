@@ -20,7 +20,7 @@ func init() {
 var collectorCmd = &cobra.Command{
 	Use:   "collector",
 	Short: "starts the collector",
-	Long:  "Will poll GitHub for changes and notify managers with updates.",
+	Long:  "Will poll GitHub for changes and notify agents with updates.",
 	Run: func(cmd *cobra.Command, args []string) {
 		wg := &sync.WaitGroup{}
 
@@ -46,13 +46,14 @@ var collectorCmd = &cobra.Command{
 		for {
 			<-tickChannel
 			collectAndPublishKeys(wg)
-			simplelog.Info("Starting key collection")
 		}
 	},
 }
 
 func collectAndPublishKeys(wg *sync.WaitGroup) {
 	wg.Add(1)
+
+	simplelog.Info("Starting key collection")
 
 	go func() {
 		defer wg.Done()
