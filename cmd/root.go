@@ -8,13 +8,26 @@ import (
 )
 
 const (
-	appName    = "GitHub SSH Key Provider"
-	appVersion = "0.1"
-	binaryName = "gskp"
+	appName       = "GitHub SSH Key Provider"
+	appVersion    = "0.1"
+	binaryName    = "gskp"
+	confEnvPrefix = "GSKP"
 )
 
 func init() {
 	RootCmd.AddCommand(versionCmd)
+
+	cobra.OnInitialize(initConfig)
+}
+
+func initConfig() {
+	viper.SetConfigName("config")
+	viper.AddConfigPath("./conf")
+	viper.AddConfigPath(".")
+	viper.SetEnvPrefix(confEnvPrefix)
+	viper.AutomaticEnv()
+
+	viper.ReadInConfig()
 
 	viper.SetDefault("redisHost", ":6379")
 	viper.Set("redisChannel", "gskp")
