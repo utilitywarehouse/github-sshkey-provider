@@ -12,15 +12,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// UserInfo is a struct that contains information about a GitHub user,
-// including Login Name and SSH Keys.
-type UserInfo struct {
-	Login string
-	ID    int
-	Name  string
-	Keys  string
-}
-
 // KeyCollector fetches public SSH keys from Github and generates an OpenSSH
 // compatible authorized_keys snippet. The keys are selected based on Team
 // membership.
@@ -47,7 +38,7 @@ func NewKeyCollector(githubAccessToken string) *KeyCollector {
 // GetTeamMemberInfo returns a slice of UserInfo structs, which contains
 // information on the users that belong to the specified GitHub team of
 // the specified organization.
-func (k *KeyCollector) GetTeamMemberInfo(organizationName string, teamName string) ([]UserInfo, error) {
+func (k *KeyCollector) GetTeamMemberInfo(organizationName string, teamName string) (UserInfoList, error) {
 	teamID, err := k.getTeamID(organizationName, teamName)
 	if err != nil {
 		return nil, err
@@ -66,8 +57,8 @@ func (k *KeyCollector) GetTeamMemberInfo(organizationName string, teamName strin
 	return memberInfo, nil
 }
 
-func (k *KeyCollector) getTeamMembers(teamID int) ([]UserInfo, error) {
-	memberInfo := []UserInfo{}
+func (k *KeyCollector) getTeamMembers(teamID int) (UserInfoList, error) {
+	memberInfo := UserInfoList{}
 
 	ltmOpts := &github.OrganizationListTeamMembersOptions{
 		Role: "all",

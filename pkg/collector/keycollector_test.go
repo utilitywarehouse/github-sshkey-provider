@@ -84,7 +84,7 @@ func TestKeyCollector_GetTeamMemberInfo(t *testing.T) {
 	mockInstallHandlers([]string{"orgTeams", "userKeys", "userInfo", "teamUserList"})
 	defer mockTeardown()
 
-	miExpected := []UserInfo{
+	miExpected := UserInfoList{
 		UserInfo{
 			Login: "user",
 			ID:    999999,
