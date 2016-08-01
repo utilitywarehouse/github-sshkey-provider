@@ -7,7 +7,7 @@ import (
 )
 
 func TestGenerateAuthorizedKeysFile(t *testing.T) {
-	ui := []collector.UserInfo{
+	ui := collector.UserInfoList{
 		collector.UserInfo{
 			Login: "user00",
 			ID:    999998,

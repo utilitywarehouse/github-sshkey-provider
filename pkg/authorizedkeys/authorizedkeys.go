@@ -28,7 +28,7 @@ const (
 
 // GenerateSnippet returns a string containing an OpenSSH-compatible
 // authorized_keys file snippet, based on a list of UserInfo structs
-func GenerateSnippet(ui []collector.UserInfo) (string, error) {
+func GenerateSnippet(ui collector.UserInfoList) (string, error) {
 	t := template.New("authorized_keys")
 	t, err := t.Parse(authorizedKeysTemplate)
 	if err != nil {
@@ -36,7 +36,10 @@ func GenerateSnippet(ui []collector.UserInfo) (string, error) {
 	}
 
 	var output bytes.Buffer
-	t.Execute(&output, ui)
+	err = t.Execute(&output, ui)
+	if err != nil {
+		return "", nil
+	}
 
 	return output.String(), nil
 }
