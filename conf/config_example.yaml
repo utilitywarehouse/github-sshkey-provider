@@ -15,6 +15,10 @@ organizationName: my_github_organization_name
 teamName: team_whose_members_get_ssh_access
 githubAccessToken: token_to_use_with_the_github_api
 
-# by default, it uses ":6379" to connect to redis (localhost), you can change
-# this value by changing the value below
+# By default, it uses ":6379" to connect to redis (localhost), you can change
+# this value by changing the value below.
 # redisHost: :6379
+
+# It also assumes the connection to redis is not authenticated. If you need to
+# use a password to authenticate with redis, please set it below.
+# redisPassword: password

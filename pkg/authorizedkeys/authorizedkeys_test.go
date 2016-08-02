@@ -36,7 +36,7 @@ ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string_for_user01
 	ak, err := GenerateSnippet(ui)
 
 	if err != nil {
-		t.Errorf("GenerateAuthorizedKeysFile returned error: %v", err)
+		t.Fatalf("GenerateAuthorizedKeysFile returned error: %v", err)
 	}
 
 	if ak != akExpected {

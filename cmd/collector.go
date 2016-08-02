@@ -65,6 +65,7 @@ func collectAndPublishKeys(wg *sync.WaitGroup) {
 			simplelog.Info("Key collection failed: %v", err)
 			return
 		}
+		simplelog.Info("Key collection completed for %d users", len(teamMembers))
 
 		authorizedKeysSnippet, err := authorizedkeys.GenerateSnippet(teamMembers)
 		if err != nil {
@@ -72,7 +73,12 @@ func collectAndPublishKeys(wg *sync.WaitGroup) {
 			return
 		}
 
-		rt := transport.NewRedisTransporter(viper.GetString("redisHost"), viper.GetString("redisChannel"))
+		rt := transport.NewRedisTransporter(
+			viper.GetString("redisHost"),
+			viper.GetString("redisPassword"),
+			viper.GetString("redisChannel"),
+		)
+
 		err = rt.Publish(authorizedKeysSnippet)
 		if err != nil {
 			simplelog.Info("Could not publish to redis: %v", err)

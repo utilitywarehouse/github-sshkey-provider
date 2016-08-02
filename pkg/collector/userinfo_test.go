@@ -28,7 +28,7 @@ func TestUserInfoList_Marshal(t *testing.T) {
 
 	jsonText, err := ui.Marshal()
 	if err != nil {
-		t.Errorf("UserInfoList.Marshal returned error: %v", err)
+		t.Fatalf("UserInfoList.Marshal returned error: %v", err)
 	}
 
 	if jsonText != jsonTextExpected {
@@ -60,7 +60,7 @@ func TestUserInfoList_Unmarshal(t *testing.T) {
 	ui := UserInfoList{}
 	err := ui.Unmarshal(jsonText)
 	if err != nil {
-		t.Errorf("UserInfoList.Unmarshal returned error: %v", err)
+		t.Fatalf("UserInfoList.Unmarshal returned error: %v", err)
 	}
 
 	if !reflect.DeepEqual(ui, uiExpected) {

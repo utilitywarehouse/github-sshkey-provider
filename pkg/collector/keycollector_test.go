@@ -95,7 +95,7 @@ func TestKeyCollector_GetTeamMemberInfo(t *testing.T) {
 
 	mi, err := testKeyCollector.GetTeamMemberInfo("none", "Owners")
 	if err != nil {
-		t.Errorf("KeyCollector.GetTeamMemberInfo returned error: %v", err)
+		t.Fatalf("KeyCollector.GetTeamMemberInfo returned an error: %v", err)
 	}
 
 	if !reflect.DeepEqual(mi, miExpected) {
@@ -176,12 +176,12 @@ func TestKeyCollector_getUserKeys_notFound(t *testing.T) {
 		t.Errorf("KeyCollector.getUserKeys should have returned an error")
 	}
 
-	if mi != "" {
-		t.Errorf("KeyCollector.getUserKeys returned unexpected value: %v", mi)
+	if err != ErrGithubKeysNotFound {
+		t.Errorf("KeyCollector.getUserKeys returned an unexpected error: %v", err)
 	}
 
-	if err.Error() != "Response was 'Not Found'" {
-		t.Errorf("KeyCollector.getUserKeys returned an unexpected error: %v", err)
+	if mi != "" {
+		t.Errorf("KeyCollector.getUserKeys returned unexpected value: %v", mi)
 	}
 }
 

@@ -12,6 +12,18 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var (
+	// ErrGithubKeysNotFound is returned when Github responds with "Not Found"
+	// when trying to get a user's keys.
+	ErrGithubKeysNotFound = errors.New("Response was 'Not Found'")
+
+	// ErrTeamNotFound is returned when a team cannot be found in the list of
+	// the organization's teams.
+	ErrTeamNotFound = errors.New("Team was not found in the organization")
+
+	defaultGithubKeysURL = "https://github.com/%s.keys"
+)
+
 // KeyCollector fetches public SSH keys from Github and generates an OpenSSH
 // compatible authorized_keys snippet. The keys are selected based on Team
 // membership.
@@ -23,15 +35,17 @@ type KeyCollector struct {
 
 // NewKeyCollector returns an instantiated KeyCollector
 func NewKeyCollector(githubAccessToken string) *KeyCollector {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: githubAccessToken},
+	tc := oauth2.NewClient(
+		oauth2.NoContext,
+		oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: githubAccessToken},
+		),
 	)
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
 
 	return &KeyCollector{
 		githubClient:  github.NewClient(tc),
 		httpClient:    &http.Client{},
-		githubKeysURL: "https://github.com/%s.keys",
+		githubKeysURL: defaultGithubKeysURL,
 	}
 }
 
@@ -67,6 +81,8 @@ func (k *KeyCollector) getTeamMembers(teamID int) (UserInfoList, error) {
 			PerPage: 100,
 		},
 	}
+
+	simplelog.Debug("Fetching a list of users in team with ID %d", teamID)
 
 	for {
 		teamMembers, resp, err := k.githubClient.Organizations.ListTeamMembers(teamID, ltmOpts)
@@ -130,7 +146,8 @@ func (k *KeyCollector) getUserKeys(userLogin string) (string, error) {
 
 	keys := strings.TrimSpace(string(body))
 	if keys == "Not Found" {
-		return "", errors.New("Response was 'Not Found'")
+		simplelog.Debug("Github responed with 'Not Found' when looking for the keys of user '%s'", userLogin)
+		return "", ErrGithubKeysNotFound
 	}
 
 	return keys, nil
@@ -140,7 +157,6 @@ func (k *KeyCollector) getTeamID(organizationName string, teamName string) (int,
 	simplelog.Debug("Fetching list of teams for organization '%s'", organizationName)
 
 	orgTeams, _, err := k.githubClient.Organizations.ListTeams(organizationName, nil)
-
 	if err != nil {
 		return -1, err
 	}
@@ -153,5 +169,5 @@ func (k *KeyCollector) getTeamID(organizationName string, teamName string) (int,
 		}
 	}
 
-	return -1, fmt.Errorf("Could not find team '%s' in organization '%s'", teamName, organizationName)
+	return -1, ErrTeamNotFound
 }
