@@ -8,7 +8,7 @@ import (
 
 var (
 	// DebugEnabled determines whether Debug-level log entries will be printed
-	DebugEnabled = true
+	DebugEnabled = false
 
 	clock = time.Now
 )

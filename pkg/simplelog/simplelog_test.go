@@ -13,18 +13,21 @@ func ExampleInfo_arguments() {
 
 func ExampleDebug() {
 	MockClock()
+	DebugEnabled = true
 	Debug("this is a debug log message")
+	DebugEnabled = false
 	// Output: {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"this is a debug log message"}
 }
 
 func ExampleDebug_arguments() {
 	MockClock()
+	DebugEnabled = true
 	Debug("this is a debug log message with a string argument: %s", "argument_value")
+	DebugEnabled = false
 	// Output: {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"this is a debug log message with a string argument: argument_value"}
 }
 
 func ExampleDebug_suppressed() {
-	DebugEnabled = false
 	Debug("this is a debug log message that should be suppressed")
 	// Output:
 }

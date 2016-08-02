@@ -2,7 +2,8 @@
 
 # This is an example YAML config file.
 
-# The config file can be written in YAML, TOML or JSON and needs to be named
+# The config file can be written in any format that viper understands
+# (https://github.com/spf13/viper) understands and needs to be named
 # `config.ext` (eg. `config.yaml`)
 
 # The config file can be placed in the same path with the binary or in `./conf`
