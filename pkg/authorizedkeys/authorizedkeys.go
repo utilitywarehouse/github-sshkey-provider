@@ -36,8 +36,7 @@ func GenerateSnippet(ui collector.UserInfoList) (string, error) {
 	}
 
 	var output bytes.Buffer
-	err = t.Execute(&output, ui)
-	if err != nil {
+	if err := t.Execute(&output, ui); err != nil {
 		return "", nil
 	}
 
