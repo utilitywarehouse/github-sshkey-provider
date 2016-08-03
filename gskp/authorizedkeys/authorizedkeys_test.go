@@ -4,7 +4,12 @@ import (
 	"testing"
 
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/collector"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
+
+func init() {
+	simplelog.DebugEnabled = true
+}
 
 func TestGenerateAuthorizedKeysFile(t *testing.T) {
 	ui := collector.UserInfoList{

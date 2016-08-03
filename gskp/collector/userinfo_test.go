@@ -3,7 +3,13 @@ package collector
 import (
 	"reflect"
 	"testing"
+
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
+
+func init() {
+	simplelog.DebugEnabled = true
+}
 
 func TestUserInfoList_Marshal(t *testing.T) {
 	ui := UserInfoList{

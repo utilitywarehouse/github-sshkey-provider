@@ -6,7 +6,12 @@ import (
 	"testing"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
+
+func init() {
+	simplelog.DebugEnabled = true
+}
 
 func TestRedisClient_noPassword(t *testing.T) {
 	rc := NewRedisClient(":6379", "")

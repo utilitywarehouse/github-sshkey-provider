@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-github/github"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
 
 var (
@@ -27,6 +28,10 @@ var (
 	// testHTTPClient is the HTTP client being tested (used in testKeyCollector)
 	testHTTPClient *http.Client
 )
+
+func init() {
+	simplelog.DebugEnabled = true
+}
 
 // mockSetup sets up the test HTTP server along with a test KeyCollector instance
 // configured to talk to that test server
