@@ -106,7 +106,7 @@ func (r *RedisClient) Reconnect(backoffDuration uint) error {
 		backoffDuration = r.ReconnectBackoffMilliseconds
 	}
 
-	simplelog.Infof("Trying to connect again in %d milliseconds", r.ReconnectBackoffMilliseconds)
+	simplelog.Infof("Trying to connect again in %d milliseconds", backoffDuration)
 	time.Sleep(time.Duration(backoffDuration) * time.Millisecond)
 
 	if err := r.Connect(); err != nil {
