@@ -32,7 +32,7 @@ func testRedisClient(t *testing.T, rc *RedisClient) {
 		t.Fatalf("RedisClient.Connect returned an error: %v", err)
 	}
 
-	if err := rc.Reconnect(); err != nil {
+	if err := rc.Reconnect(0); err != nil {
 		t.Fatalf("RedisClient.Connect returned an error: %v", err)
 	}
 
@@ -42,12 +42,9 @@ func testRedisClient(t *testing.T, rc *RedisClient) {
 
 	expectedValue := "u3h5rEj-wl1SVm%i45JLt3$khjZv348j_Fdk"
 
-	rs, err := redis.String(rc.Conn.Do("SET", "test_key", expectedValue))
+	_, err := redis.String(rc.Conn.Do("SET", "test_key", expectedValue))
 	if err != nil {
 		t.Fatalf("Got an error on SET: %v", err)
-	}
-	if rs == nil {
-		t.Fatalf("Got an error on SET, return value is nil")
 	}
 
 	rg, err := redis.String(rc.Conn.Do("GET", "test_key"))

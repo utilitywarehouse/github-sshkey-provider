@@ -61,8 +61,10 @@ func (r *RedisClient) Connect() error {
 			simplelog.Infof("Error connecting to redis: %v", err)
 
 			if reconnectAttemptCount < r.ReconnectAttempts {
-				simplelog.Infof("Reconnecting in %d milliseconds", r.ReconnectBackoffMilliseconds)
-				time.Sleep(time.Duration((reconnectAttemptCount+1)*r.ReconnectBackoffMilliseconds) * time.Millisecond)
+				backoffDuration := (reconnectAttemptCount + 1) * r.ReconnectBackoffMilliseconds
+
+				simplelog.Infof("Reconnecting in %d milliseconds", backoffDuration)
+				time.Sleep(time.Duration(backoffDuration) * time.Millisecond)
 
 				reconnectAttemptCount++
 			} else {
@@ -92,16 +94,20 @@ func (r *RedisClient) Disconnect() error {
 	return nil
 }
 
-// Reconnect attempts to disconnect from redis and connect again
-// after waiting for a number of milliseconds.
-func (r *RedisClient) Reconnect() error {
+// Reconnect attempts to disconnect from redis and connect again, after waiting
+// for a number of milliseconds.
+func (r *RedisClient) Reconnect(backoffDuration uint) error {
 	simplelog.Infof("Will try to reconnect to redis at %s", r.Host)
 	if err := r.Disconnect(); err != nil {
 		return err
 	}
 
+	if backoffDuration == 0 {
+		backoffDuration = r.ReconnectBackoffMilliseconds
+	}
+
 	simplelog.Infof("Trying to connect again in %d milliseconds", r.ReconnectBackoffMilliseconds)
-	time.Sleep(time.Duration(r.ReconnectBackoffMilliseconds) * time.Millisecond)
+	time.Sleep(time.Duration(backoffDuration) * time.Millisecond)
 
 	if err := r.Connect(); err != nil {
 		return err
