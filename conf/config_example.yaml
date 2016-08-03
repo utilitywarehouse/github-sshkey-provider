@@ -23,3 +23,7 @@ githubAccessToken: token_to_use_with_the_github_api
 # It also assumes the connection to redis is not authenticated. If you need to
 # use a password to authenticate with redis, please set it below.
 # redisPassword: password
+
+# collectorPollingInterval determines the number of seconds between collection
+# cycles (ie. how often the collector will poll the GitHub API)
+# collectorPollingInterval: 900

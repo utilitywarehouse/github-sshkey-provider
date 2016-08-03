@@ -27,9 +27,10 @@ var collectorCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		wg := &sync.WaitGroup{}
 
+		simplelog.Infof("Starting up [collectorPollingInterval=%d]", viper.GetInt("collectorPollingInterval"))
+
 		// start ticking
-		ticker := time.NewTicker(time.Second * 60)
-		tickChannel := ticker.C
+		ticker := time.NewTicker(time.Duration(viper.GetInt("collectorPollingInterval")) * time.Second)
 
 		// handle interrupt
 		sigChannel := make(chan os.Signal, 1)
@@ -44,6 +45,7 @@ var collectorCmd = &cobra.Command{
 			os.Exit(0)
 		}()
 
+		// collection loop
 		for {
 			wg.Add(1)
 
@@ -54,7 +56,8 @@ var collectorCmd = &cobra.Command{
 
 				collectAndPublishKeys()
 			}()
-			<-tickChannel
+
+			<-ticker.C
 		}
 	},
 }
@@ -81,9 +84,9 @@ func collectAndPublishKeys() {
 				simplelog.Infof("Team members have not changed since last time, will not publish anything.")
 
 				return
-			} else {
-				simplelog.Infof("Ignoring error that occured while trying to write in the cache: %v", err)
 			}
+
+			simplelog.Infof("Ignoring error that occured while trying to write in the cache: %v", err)
 		}
 	}
 
