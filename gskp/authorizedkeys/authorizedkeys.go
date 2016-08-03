@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/collector"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/collector"
 )
 
 const (

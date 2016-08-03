@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/simplelog"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
 
 const (
