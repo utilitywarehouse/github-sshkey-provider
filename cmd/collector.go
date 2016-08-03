@@ -11,7 +11,7 @@ import (
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/authorizedkeys"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/collector"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
-	"github.com/utilitywarehouse/github-sshkey-provider/gskp/transport"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/transporter"
 )
 
 func init() {
@@ -34,11 +34,11 @@ var collectorCmd = &cobra.Command{
 		signal.Notify(sigChannel, os.Interrupt)
 		go func() {
 			<-sigChannel
-			simplelog.Info("Shutdown started, waiting for goroutines to return")
+			simplelog.Infof("Shutdown started, waiting for goroutines to return")
 			ticker.Stop()
 			wg.Wait()
 
-			simplelog.Info("Shutdown complete, exiting now")
+			simplelog.Infof("Shutdown complete, exiting now")
 			os.Exit(0)
 		}()
 
@@ -54,7 +54,7 @@ var collectorCmd = &cobra.Command{
 func collectAndPublishKeys(wg *sync.WaitGroup) {
 	wg.Add(1)
 
-	simplelog.Info("Starting key collection")
+	simplelog.Infof("Starting key collection")
 
 	go func() {
 		defer wg.Done()
@@ -62,18 +62,18 @@ func collectAndPublishKeys(wg *sync.WaitGroup) {
 		kc := collector.NewKeyCollector(viper.GetString("githubAccessToken"))
 		teamMembers, err := kc.GetTeamMemberInfo(viper.GetString("organizationName"), viper.GetString("teamName"))
 		if err != nil {
-			simplelog.Info("Key collection failed: %v", err)
+			simplelog.Infof("Key collection failed: %v", err)
 			return
 		}
-		simplelog.Info("Key collection completed for %d users", len(teamMembers))
+		simplelog.Infof("Key collection completed for %d users", len(teamMembers))
 
 		authorizedKeysSnippet, err := authorizedkeys.GenerateSnippet(teamMembers)
 		if err != nil {
-			simplelog.Info("Template generation failed: %v", err)
+			simplelog.Infof("Template generation failed: %v", err)
 			return
 		}
 
-		rt := transport.NewRedisTransporter(
+		rt := transporter.NewRedis(
 			viper.GetString("redisHost"),
 			viper.GetString("redisPassword"),
 			viper.GetString("redisChannel"),
@@ -81,7 +81,7 @@ func collectAndPublishKeys(wg *sync.WaitGroup) {
 
 		err = rt.Publish(authorizedKeysSnippet)
 		if err != nil {
-			simplelog.Info("Could not publish to redis: %v", err)
+			simplelog.Infof("Could not publish to redis: %v", err)
 		}
 	}()
 }
