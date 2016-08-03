@@ -50,17 +50,11 @@ func NewKeyCollector(githubAccessToken string) *KeyCollector {
 }
 
 // GetTeamMemberInfo returns a slice of UserInfo structs, which contains
-// information on the users that belong to the specified GitHub team of
-// the specified organization.
-func (k *KeyCollector) GetTeamMemberInfo(organizationName string, teamName string) (UserInfoList, int, error) {
-	teamID, err := k.getTeamID(organizationName, teamName)
-	if err != nil {
-		return nil, -1, err
-	}
-
+// information on the users that belong to the specified GitHub team.
+func (k *KeyCollector) GetTeamMemberInfo(teamID int) (UserInfoList, error) {
 	memberInfo, err := k.getTeamMembers(teamID)
 	if err != nil {
-		return nil, -1, err
+		return nil, err
 	}
 
 	for i := range memberInfo {
@@ -68,7 +62,28 @@ func (k *KeyCollector) GetTeamMemberInfo(organizationName string, teamName strin
 		k.setUserKeys(&memberInfo[i])
 	}
 
-	return memberInfo, teamID, nil
+	return memberInfo, nil
+}
+
+// GetTeamID finds the GitHub team id, based on the organization and team
+// names.
+func (k *KeyCollector) GetTeamID(organizationName string, teamName string) (int, error) {
+	simplelog.Debugf("Fetching list of teams for organization '%s'", organizationName)
+
+	orgTeams, _, err := k.githubClient.Organizations.ListTeams(organizationName, nil)
+	if err != nil {
+		return -1, err
+	}
+
+	for _, team := range orgTeams {
+		if *team.Name == teamName {
+			simplelog.Debugf("Team '%s' with id %d found in organization '%s'", teamName, *team.ID, organizationName)
+
+			return *team.ID, nil
+		}
+	}
+
+	return -1, ErrTeamNotFound
 }
 
 func (k *KeyCollector) getTeamMembers(teamID int) (UserInfoList, error) {
@@ -151,23 +166,4 @@ func (k *KeyCollector) getUserKeys(userLogin string) (string, error) {
 	}
 
 	return keys, nil
-}
-
-func (k *KeyCollector) getTeamID(organizationName string, teamName string) (int, error) {
-	simplelog.Debugf("Fetching list of teams for organization '%s'", organizationName)
-
-	orgTeams, _, err := k.githubClient.Organizations.ListTeams(organizationName, nil)
-	if err != nil {
-		return -1, err
-	}
-
-	for _, team := range orgTeams {
-		if *team.Name == teamName {
-			simplelog.Debugf("Team '%s' with id %d found in organization '%s'", teamName, *team.ID, organizationName)
-
-			return *team.ID, nil
-		}
-	}
-
-	return -1, ErrTeamNotFound
 }

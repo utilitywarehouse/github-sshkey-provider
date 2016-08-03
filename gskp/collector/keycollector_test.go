@@ -98,13 +98,17 @@ func TestKeyCollector_GetTeamMemberInfo(t *testing.T) {
 		},
 	}
 
-	mi, ti, err := testKeyCollector.GetTeamMemberInfo("none", "Owners")
+	ti, err := testKeyCollector.GetTeamID("none", "Owners")
 	if err != nil {
-		t.Fatalf("KeyCollector.GetTeamMemberInfo returned an error: %v", err)
+		t.Fatalf("KeyCollector.GetTeamID returned an error: %v", err)
+	}
+	if ti != 888888 {
+		t.Errorf("KeyCollector.GetTeamID returned an unexpected ID: %d", ti)
 	}
 
-	if ti != 888888 {
-		t.Errorf("KeyCollector.GetTeamMemberInfo returned an unexpected Team ID: %d", ti)
+	mi, err := testKeyCollector.GetTeamMemberInfo(ti)
+	if err != nil {
+		t.Fatalf("KeyCollector.GetTeamMemberInfo returned an error: %v", err)
 	}
 
 	if !reflect.DeepEqual(mi, miExpected) {
@@ -116,17 +120,12 @@ func TestKeyCollector_GetTeamMemberInfo_getTeamIDError(t *testing.T) {
 	mockSetup()
 	defer mockTeardown()
 
-	mi, ti, err := testKeyCollector.GetTeamMemberInfo("none", "Owners")
+	ti, err := testKeyCollector.GetTeamID("none", "Owners")
 	if err == nil {
-		t.Errorf("KeyCollector.GetTeamMemberInfo should have returned an error")
+		t.Fatalf("KeyCollector.GetTeamID should have returned an error")
 	}
-
 	if ti != -1 {
-		t.Errorf("KeyCollector.GetTeamMemberInfo returned an unexpected Team ID: %d", ti)
-	}
-
-	if mi != nil {
-		t.Errorf("KeyCollector.GetTeamMemberInfo returned unexpected value: %v", mi)
+		t.Errorf("KeyCollector.GetTeamID returned an unexpected ID: %d", ti)
 	}
 }
 
@@ -140,17 +139,12 @@ func TestKeyCollector_GetTeamMemberInfo_getTeamIDUnknown(t *testing.T) {
 	})
 	defer mockTeardown()
 
-	mi, ti, err := testKeyCollector.GetTeamMemberInfo("none", "UnkownTeam")
+	ti, err := testKeyCollector.GetTeamID("none", "UnknownTeam")
 	if err == nil {
-		t.Errorf("KeyCollector.GetTeamMemberInfo should have returned an error")
+		t.Fatalf("KeyCollector.GetTeamID should have returned an error")
 	}
-
 	if ti != -1 {
-		t.Errorf("KeyCollector.GetTeamMemberInfo returned an unexpected Team ID: %d", ti)
-	}
-
-	if mi != nil {
-		t.Errorf("KeyCollector.GetTeamMemberInfo returned unexpected value: %v", mi)
+		t.Errorf("KeyCollector.GetTeamID returned an unexpected ID: %d", ti)
 	}
 }
 
@@ -159,13 +153,9 @@ func TestKeyCollector_GetTeamMemberInfo_getTeamMembersError(t *testing.T) {
 	mockInstallHandlers([]string{"orgTeams"})
 	defer mockTeardown()
 
-	mi, ti, err := testKeyCollector.GetTeamMemberInfo("none", "Owners")
+	mi, err := testKeyCollector.GetTeamMemberInfo(888888)
 	if err == nil {
 		t.Errorf("KeyCollector.GetTeamMemberInfo should have returned an error")
-	}
-
-	if ti != -1 {
-		t.Errorf("KeyCollector.GetTeamMemberInfo returned an unexpected Team ID: %d", ti)
 	}
 
 	if mi != nil {

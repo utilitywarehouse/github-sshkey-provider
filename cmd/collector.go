@@ -46,6 +46,7 @@ var collectorCmd = &cobra.Command{
 		}()
 
 		// collection loop
+		teamID := findTeamID()
 		for {
 			wg.Add(1)
 
@@ -54,7 +55,7 @@ var collectorCmd = &cobra.Command{
 			go func() {
 				defer wg.Done()
 
-				collectAndPublishKeys()
+				collectAndPublishKeys(teamID)
 			}()
 
 			<-ticker.C
@@ -62,9 +63,23 @@ var collectorCmd = &cobra.Command{
 	},
 }
 
-func collectAndPublishKeys() {
+func findTeamID() int {
 	kc := collector.NewKeyCollector(viper.GetString("githubAccessToken"))
-	teamMembers, teamID, err := kc.GetTeamMemberInfo(viper.GetString("organizationName"), viper.GetString("teamName"))
+
+	ti, err := kc.GetTeamID(viper.GetString("organizationName"), viper.GetString("teamName"))
+	if err != nil {
+		simplelog.Errorf("Error occured when trying to find the team's ID: %v", err)
+		os.Exit(1)
+	}
+
+	simplelog.Infof("Found team ID: %d", ti)
+
+	return ti
+}
+
+func collectAndPublishKeys(teamID int) {
+	kc := collector.NewKeyCollector(viper.GetString("githubAccessToken"))
+	teamMembers, err := kc.GetTeamMemberInfo(teamID)
 	if err != nil {
 		simplelog.Infof("Key collection failed: %v", err)
 		return
