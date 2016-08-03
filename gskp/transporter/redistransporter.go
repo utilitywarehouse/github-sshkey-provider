@@ -12,7 +12,8 @@ type Redis struct {
 	channel                string
 	pubsubConn             redis.PubSubConn
 	listenerReconnectCount uint
-	listenerActive         bool
+	listenerEnabled        bool
+	listenerSubscribed     bool
 }
 
 // NewRedis returns an instantiated Redis transporter struct.
@@ -23,6 +24,7 @@ func NewRedis(host string, password string, channel string) *Redis {
 		redis.PubSubConn{},
 		0,
 		true,
+		false,
 	}
 }
 
@@ -47,7 +49,7 @@ func (t *Redis) Publish(message string) error {
 // Listen instructs the Redis transporter to subscribe to a redis channel and start
 // listening for messages.
 func (t *Redis) Listen(callback func(string) error) error {
-	t.listenerActive = true
+	t.listenerEnabled = true
 	t.listenerReconnectCount = 0
 
 	if err := t.Connect(); err != nil {
@@ -55,7 +57,7 @@ func (t *Redis) Listen(callback func(string) error) error {
 	}
 	defer t.Disconnect()
 
-	for t.listenerActive {
+	for t.listenerEnabled {
 		t.pubsubConn = redis.PubSubConn{Conn: t.Conn}
 
 		if err := t.pubsubConn.Subscribe(t.channel); err != nil {
@@ -79,9 +81,13 @@ func (t *Redis) Listen(callback func(string) error) error {
 				if v.Kind == "unsubscribe" {
 					simplelog.Infof("Stopped listening for messages")
 
+					t.listenerSubscribed = false
+
 					return nil
 				} else if v.Kind == "subscribe" {
 					simplelog.Infof("Started listening for new messages")
+
+					t.listenerSubscribed = true
 
 					t.listenerReconnectCount = 0
 				}
@@ -102,9 +108,9 @@ func (t *Redis) Listen(callback func(string) error) error {
 
 // StopListening instructs the listener to stop listening and return.
 func (t *Redis) StopListening() error {
-	t.listenerActive = false
+	t.listenerEnabled = false
 
-	if t.pubsubConn.Conn != nil {
+	if t.listenerSubscribed {
 		return t.pubsubConn.Unsubscribe(t.channel)
 	}
 

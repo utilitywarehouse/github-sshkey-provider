@@ -64,6 +64,38 @@ func TestRedis_stopListening(t *testing.T) {
 	wg.Wait()
 }
 
+func ExampleRedis_Listen_quitWhileTryingToReconnect() {
+	simplelog.MockClock()
+
+	l := NewRedis(":6380", "", "test_channel")
+	l.ReconnectBackoffMilliseconds = 1000
+	l.ReconnectAttempts = 2
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		l.Listen(func(m string) error { return nil })
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+
+	l.StopListening()
+
+	wg.Wait()
+
+	// Output:
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Connected to redis at :6380"}
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Error occured on listener: NOAUTH Authentication required."}
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Will try to reconnect to redis at :6380"}
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Disconnected from redis at :6380"}
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Trying to connect again in 1000 milliseconds"}
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Connected to redis at :6380"}
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Disconnected from redis at :6380"}
+}
+
 func ExampleRedis_Listen_wrongPassword() {
 	simplelog.MockClock()
 
