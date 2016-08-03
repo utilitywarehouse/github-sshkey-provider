@@ -52,15 +52,15 @@ func NewKeyCollector(githubAccessToken string) *KeyCollector {
 // GetTeamMemberInfo returns a slice of UserInfo structs, which contains
 // information on the users that belong to the specified GitHub team of
 // the specified organization.
-func (k *KeyCollector) GetTeamMemberInfo(organizationName string, teamName string) (UserInfoList, error) {
+func (k *KeyCollector) GetTeamMemberInfo(organizationName string, teamName string) (UserInfoList, int, error) {
 	teamID, err := k.getTeamID(organizationName, teamName)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 
 	memberInfo, err := k.getTeamMembers(teamID)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 
 	for i := range memberInfo {
@@ -68,7 +68,7 @@ func (k *KeyCollector) GetTeamMemberInfo(organizationName string, teamName strin
 		k.setUserKeys(&memberInfo[i])
 	}
 
-	return memberInfo, nil
+	return memberInfo, teamID, nil
 }
 
 func (k *KeyCollector) getTeamMembers(teamID int) (UserInfoList, error) {
