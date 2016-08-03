@@ -1,4 +1,4 @@
-package transport
+package transporter
 
 import (
 	"github.com/garyburd/redigo/redis"
