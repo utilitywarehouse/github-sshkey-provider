@@ -62,5 +62,7 @@ func initConfig() {
 func setConfigDefaults() {
 	viper.SetDefault("redisHost", ":6379")
 	viper.SetDefault("redisPassword", "")
+
 	viper.Set("redisChannel", "gskp")
+	viper.Set("redisCacheDB", "9")
 }
