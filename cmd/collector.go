@@ -8,10 +8,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/authorizedkeys"
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/collector"
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/simplelog"
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/transport"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/authorizedkeys"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/collector"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/transport"
 )
 
 func init() {

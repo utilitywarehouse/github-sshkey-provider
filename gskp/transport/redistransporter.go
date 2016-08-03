@@ -2,7 +2,7 @@ package transport
 
 import (
 	"github.com/garyburd/redigo/redis"
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/simplelog"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
 
 // RedisTransporter implements the Transporter interface with a redis backend

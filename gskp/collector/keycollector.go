@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/simplelog"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 	"golang.org/x/oauth2"
 )
 

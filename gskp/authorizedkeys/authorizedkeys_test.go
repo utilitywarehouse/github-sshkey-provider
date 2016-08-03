@@ -3,7 +3,7 @@ package authorizedkeys
 import (
 	"testing"
 
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/collector"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/collector"
 )
 
 func TestGenerateAuthorizedKeysFile(t *testing.T) {
