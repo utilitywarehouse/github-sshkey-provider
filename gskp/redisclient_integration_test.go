@@ -36,9 +36,13 @@ func testRedisClient(t *testing.T, rc *RedisClient) {
 		t.Fatalf("RedisClient.Connect returned an error: %v", err)
 	}
 
+	if _, err := redis.String(rc.Conn.Do("FLUSHDB")); err != nil {
+		t.Fatalf("Got an error on FLUSHDB: %v", err)
+	}
+
 	expectedValue := "u3h5rEj-wl1SVm%i45JLt3$khjZv348j_Fdk"
 
-	rs, err := rc.Conn.Do("SET", "test_key", expectedValue)
+	rs, err := redis.String(rc.Conn.Do("SET", "test_key", expectedValue))
 	if err != nil {
 		t.Fatalf("Got an error on SET: %v", err)
 	}
