@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/utilitywarehouse/github-sshkey-provider/gskp/authorizedkeys"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/collector"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplecache"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
@@ -105,7 +105,7 @@ func collectAndPublishKeys(teamID int) {
 		}
 	}
 
-	authorizedKeysSnippet, err := authorizedkeys.GenerateSnippet(teamMembers)
+	authorizedKeysSnippet, err := gskp.AuthorizedKeys.GenerateSnippet(teamMembers)
 	if err != nil {
 		simplelog.Infof("Template generation failed: %v", err)
 		return
