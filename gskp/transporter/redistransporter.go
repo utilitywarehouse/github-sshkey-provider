@@ -9,11 +9,11 @@ import (
 // Redis implements the transporter interface using a redis backend.
 type Redis struct {
 	*gskp.RedisClient
-	channel                string
-	pubsubConn             redis.PubSubConn
-	listenerReconnectCount uint
-	listenerEnabled        bool
-	listenerSubscribed     bool
+	channel            string
+	pubsubConn         redis.PubSubConn
+	listenerEnabled    bool
+	listenerSubscribed bool
+	listenerLastError  error
 }
 
 // NewRedis returns an instantiated Redis transporter struct.
@@ -22,16 +22,16 @@ func NewRedis(host string, password string, channel string) *Redis {
 		gskp.NewRedisClient(host, password),
 		channel,
 		redis.PubSubConn{},
-		0,
 		true,
 		false,
+		nil,
 	}
 }
 
 // Publish opens a new connection to the redis host, publishes a message to a
 // channel and closes the connection.
 func (t *Redis) Publish(message string) error {
-	if err := t.Connect(); err != nil {
+	if err := t.Connect(true); err != nil {
 		return err
 	}
 	defer t.Disconnect()
@@ -50,9 +50,9 @@ func (t *Redis) Publish(message string) error {
 // listening for messages.
 func (t *Redis) Listen(callback func(string) error) error {
 	t.listenerEnabled = true
-	t.listenerReconnectCount = 0
+	t.listenerLastError = nil
 
-	if err := t.Connect(); err != nil {
+	if err := t.Connect(true); err != nil {
 		return err
 	}
 	defer t.Disconnect()
@@ -88,13 +88,19 @@ func (t *Redis) Listen(callback func(string) error) error {
 					simplelog.Infof("Started listening for new messages")
 
 					t.listenerSubscribed = true
-
-					t.listenerReconnectCount = 0
+					t.listenerLastError = nil
 				}
 			case error:
 				simplelog.Infof("Error occured on listener: %v", v)
 
-				if err := t.listenerReconnect(); err != nil {
+				if t.listenerLastError == v {
+					simplelog.Errorf("Error occured twice in a row, giving up")
+					return v
+				}
+
+				t.listenerLastError = v
+
+				if err := t.Reconnect(0); err != nil {
 					return err
 				}
 
@@ -113,22 +119,6 @@ func (t *Redis) StopListening() error {
 	if t.listenerSubscribed {
 		return t.pubsubConn.Unsubscribe(t.channel)
 	}
-
-	return nil
-}
-
-func (t *Redis) listenerReconnect() error {
-	if t.listenerReconnectCount >= t.ReconnectAttempts {
-		simplelog.Infof("Giving up trying to reconnect.")
-
-		return gskp.ErrRedisReconnectTriesExhausted
-	}
-
-	if err := t.Reconnect((t.listenerReconnectCount + 1) * t.ReconnectBackoffMilliseconds); err != nil {
-		return err
-	}
-
-	t.listenerReconnectCount++
 
 	return nil
 }

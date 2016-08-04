@@ -113,11 +113,6 @@ func ExampleRedis_Listen_wrongPassword() {
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Trying to connect again in 100 milliseconds"}
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Connected to redis at :6380"}
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Error occured on listener: NOAUTH Authentication required."}
-	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Will try to reconnect to redis at :6380"}
-	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Disconnected from redis at :6380"}
-	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Trying to connect again in 200 milliseconds"}
-	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Connected to redis at :6380"}
-	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Error occured on listener: NOAUTH Authentication required."}
-	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Giving up trying to reconnect."}
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"error","message":"Error occured twice in a row, giving up"}
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Disconnected from redis at :6380"}
 }
