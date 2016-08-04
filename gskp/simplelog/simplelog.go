@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	// DebugEnabled determines whether Debug-level log entries will be printed
+	// DebugEnabled determines whether Debug-level log entries will be printed.
 	DebugEnabled = false
 
 	clock = time.Now
@@ -25,19 +25,19 @@ type logEntry struct {
 	Message   string    `json:"message"`
 }
 
-// Debugf prints an Debug-level JSON formatted log entry to STDOUT
+// Debugf prints an Debug-level JSON formatted log entry to STDOUT.
 func Debugf(message string, args ...interface{}) {
 	if DebugEnabled {
 		printLogMessage("debug", message, args...)
 	}
 }
 
-// Infof prints an Info-level JSON formatted log entry to STDOUT
+// Infof prints an Info-level JSON formatted log entry to STDOUT.
 func Infof(message string, args ...interface{}) {
 	printLogMessage("info", message, args...)
 }
 
-// Errorf prints an Error-level JSON formatted log entry to STDOUT
+// Errorf prints an Error-level JSON formatted log entry to STDOUT.
 func Errorf(message string, args ...interface{}) {
 	printLogMessage("error", message, args...)
 }

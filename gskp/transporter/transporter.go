@@ -10,7 +10,7 @@ var (
 )
 
 // Interface to be implemented for providing communication capabilities between
-// the components of the application
+// the components of the application.
 type Interface interface {
 	Publish(string) error
 	Listen(func(string) error) error

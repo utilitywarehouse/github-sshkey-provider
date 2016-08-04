@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	// ErrGithubKeysNotFound is returned when Github responds with "Not Found"
+	// ErrGithubKeysNotFound is returned when GitHub responds with "Not Found".
 	// when trying to get a user's keys.
 	ErrGithubKeysNotFound = errors.New("Response was 'Not Found'")
 
@@ -24,16 +24,14 @@ var (
 	defaultGithubKeysURL = "https://github.com/%s.keys"
 )
 
-// KeyCollector fetches public SSH keys from Github and generates an OpenSSH
-// compatible authorized_keys snippet. The keys are selected based on Team
-// membership.
+// KeyCollector fetches user information and their public SSH keys from GitHub.
 type KeyCollector struct {
 	githubClient  *github.Client
 	httpClient    *http.Client
 	githubKeysURL string
 }
 
-// NewKeyCollector returns an instantiated KeyCollector
+// NewKeyCollector returns an instantiated KeyCollector.
 func NewKeyCollector(githubAccessToken string) *KeyCollector {
 	tc := oauth2.NewClient(
 		oauth2.NoContext,
@@ -117,6 +115,8 @@ func (k *KeyCollector) getTeamMembers(teamID int) (UserInfoList, error) {
 		}
 
 		if resp.NextPage == 0 {
+			simplelog.Debugf("GitHub API Limits: %d / %d until %s", resp.Remaining, resp.Limit, resp.Reset)
+
 			break
 		}
 	}
@@ -161,7 +161,7 @@ func (k *KeyCollector) getUserKeys(userLogin string) (string, error) {
 
 	keys := strings.TrimSpace(string(body))
 	if keys == "Not Found" {
-		simplelog.Debugf("Github responed with 'Not Found' when looking for the keys of user '%s'", userLogin)
+		simplelog.Debugf("GitHub responed with 'Not Found' when looking for the keys of user '%s'", userLogin)
 		return "", ErrGithubKeysNotFound
 	}
 

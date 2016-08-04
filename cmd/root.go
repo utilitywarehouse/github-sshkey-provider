@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	// RootCmd is the root command for cobra
+	// RootCmd is the root command for cobra.
 	RootCmd = &cobra.Command{
 		Use:   binaryName,
 		Short: appName,
