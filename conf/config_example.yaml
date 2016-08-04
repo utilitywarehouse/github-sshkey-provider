@@ -3,7 +3,7 @@
 # This is an example YAML config file.
 
 # The config file can be written in any format that viper understands
-# (https://github.com/spf13/viper) understands and needs to be named
+# (https://github.com/spf13/viper) understands and needs to be named like
 # `config.ext` (eg. `config.yaml`)
 
 # The config file can be placed in the same path with the binary or in `./conf`
@@ -12,8 +12,13 @@
 # of the environment variables is prefixed by GSKP_, eg:
 # githubAccessToken is controlled by GSKP_GITHUBACCESSTOKEN
 
+# The values below are used by the collector to determine which GitHub team
+# to pull the SSH keys from.
 organizationName: my_github_organization_name
 teamName: team_whose_members_get_ssh_access
+
+# This is an access token to be used when talking to the GitHub API. It needs
+# to have the `read:org` permission.
 githubAccessToken: token_to_use_with_the_github_api
 
 # By default, it uses ":6379" to connect to redis (localhost), you can change
