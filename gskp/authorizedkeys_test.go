@@ -1,4 +1,4 @@
-package authorizedkeys
+package gskp
 
 import (
 	"testing"
@@ -36,7 +36,7 @@ ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string_for_user01
 
 # END: github_sshkey_provider`
 
-	ak, err := GenerateSnippet(ui)
+	ak, err := AuthorizedKeys.GenerateSnippet(ui)
 
 	if err != nil {
 		t.Fatalf("GenerateAuthorizedKeysFile returned error: %v", err)

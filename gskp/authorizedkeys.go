@@ -1,4 +1,4 @@
-package authorizedkeys
+package gskp
 
 import (
 	"bytes"
@@ -23,9 +23,17 @@ const (
 {{ end -}}`
 )
 
-// GenerateSnippet returns a string containing an OpenSSH-compatible
-// authorized_keys file snippet, based on a list of UserInfo structs
-func GenerateSnippet(ui collector.UserInfoList) (string, error) {
+var (
+	// AuthorizedKeys provides various functions related to the manipulation
+	// of OpenSSH-compatible authorized_keys files.
+	AuthorizedKeys authorizedKeys
+)
+
+type authorizedKeys struct{}
+
+// GenerateSnippet returns a string containing an snippet compatible with
+// OpenSSH authorized_keys format, based on a list of UserInfo structs.
+func (authorizedKeys) GenerateSnippet(ui collector.UserInfoList) (string, error) {
 	t := template.New("authorized_keys")
 	t, err := t.Parse(snippetTemplate)
 	if err != nil {
