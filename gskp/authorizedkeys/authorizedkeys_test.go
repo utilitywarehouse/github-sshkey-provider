@@ -27,17 +27,15 @@ func TestGenerateAuthorizedKeysFile(t *testing.T) {
 		},
 	}
 
-	akExpected := `
-# BEGIN: github_key_provider
+	akExpected := `# BEGIN: github_sshkey_provider
 
 # SSH keys for user00 (User Zero)
 ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string_for_user00
-
 # SSH keys for user01 (User One)
 ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string_for_user01
 
-# END: github_key_provider
-`
+# END: github_sshkey_provider`
+
 	ak, err := GenerateSnippet(ui)
 
 	if err != nil {
