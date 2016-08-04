@@ -3,12 +3,12 @@ package cmd
 import (
 	"os"
 	"os/signal"
-	"sync"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/simplelog"
-	"github.com/utilitywarehouse/github-sshkey-provider/pkg/transport"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/transporter"
 )
 
 func init() {
@@ -20,42 +20,39 @@ var agentCmd = &cobra.Command{
 	Short: "starts the agent",
 	Long:  "Will listen for notifications from the collector and adjust the authorized_keys file.",
 	Run: func(cmd *cobra.Command, args []string) {
-		wg := &sync.WaitGroup{}
-
-		rt := transport.NewRedisTransporter(viper.GetString("redisHost"), viper.GetString("redisChannel"))
+		rt := transporter.NewRedis(
+			viper.GetString("redisHost"),
+			viper.GetString("redisPassword"),
+			viper.GetString("redisChannel"),
+		)
 
 		// handle interrupt
 		sigChannel := make(chan os.Signal, 1)
 		signal.Notify(sigChannel, os.Interrupt)
 		go func() {
 			<-sigChannel
-			simplelog.Info("Shutdown started, waiting for goroutines to return")
+			simplelog.Infof("Shutdown started, waiting for goroutines to return")
 			rt.StopListening()
 		}()
 
-		updateAuthorizedKeys(wg, rt)
+		updateAuthorizedKeys(rt)
 
-		wg.Wait()
-
-		simplelog.Info("Shutdown complete, exiting now")
-
-		os.Exit(0)
+		simplelog.Infof("Shutdown complete, exiting now")
 	},
 }
 
-func updateAuthorizedKeys(wg *sync.WaitGroup, rt *transport.RedisTransporter) {
-	wg.Add(1)
+func updateAuthorizedKeys(rt *transporter.Redis) {
+	if err := rt.Listen(func(message string) error {
+		simplelog.Infof("Updating %s", viper.GetString("authorizedKeysPath"))
 
-	go func() {
-		defer wg.Done()
-
-		err := rt.Listen(func(message string) error {
-			// XXX process message here
-			return nil
-		})
-
+		err := gskp.AuthorizedKeys.Update(viper.GetString("authorizedKeysPath"), message)
 		if err != nil {
-			simplelog.Info("Listen error: %v", err)
+			simplelog.Infof("Error occured while trying to update '%s': %v",
+				viper.GetString("authorizedKeysPath"), err)
 		}
-	}()
+
+		return nil
+	}); err != nil {
+		simplelog.Errorf("Listen error: %v", err)
+	}
 }

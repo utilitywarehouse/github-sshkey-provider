@@ -49,8 +49,6 @@ var collectorCmd = &cobra.Command{
 		for {
 			wg.Add(1)
 
-			simplelog.Infof("Starting key collection")
-
 			go func() {
 				defer wg.Done()
 
@@ -77,6 +75,8 @@ func findTeamID() int {
 }
 
 func collectAndPublishKeys(teamID int) {
+	simplelog.Infof("Starting key collection")
+
 	kc := gskp.NewKeyCollector(viper.GetString("githubAccessToken"))
 	teamMembers, err := kc.GetTeamMemberInfo(teamID)
 	if err != nil {
