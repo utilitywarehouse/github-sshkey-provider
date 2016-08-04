@@ -49,24 +49,26 @@ func NewRedisClient(host string, password string) *RedisClient {
 
 // Connect tries to establish a connection to the redis host. It will attempt
 // to connect a number of times before giving up.
-func (r *RedisClient) Connect() error {
+func (r *RedisClient) Connect(retry bool) error {
 	var conn redis.Conn
 	var err error
 	var reconnectAttemptCount uint
 
 	for conn == nil {
 		conn, err = redis.Dial("tcp", r.Host, r.getDialOptions()...)
+		reconnectAttemptCount++
 
 		if err != nil {
 			simplelog.Infof("Error connecting to redis: %v", err)
 
-			if reconnectAttemptCount < r.ReconnectAttempts {
-				backoffDuration := (reconnectAttemptCount + 1) * r.ReconnectBackoffMilliseconds
+			if !retry {
+				return err
+			}
 
+			if reconnectAttemptCount <= r.ReconnectAttempts {
+				backoffDuration := reconnectAttemptCount * r.ReconnectBackoffMilliseconds
 				simplelog.Infof("Reconnecting in %d milliseconds", backoffDuration)
 				time.Sleep(time.Duration(backoffDuration) * time.Millisecond)
-
-				reconnectAttemptCount++
 			} else {
 				simplelog.Infof("Will not attempt to reconnect: exhausted attempts")
 				return ErrRedisReconnectTriesExhausted
@@ -109,11 +111,7 @@ func (r *RedisClient) Reconnect(backoffDuration uint) error {
 	simplelog.Infof("Trying to connect again in %d milliseconds", backoffDuration)
 	time.Sleep(time.Duration(backoffDuration) * time.Millisecond)
 
-	if err := r.Connect(); err != nil {
-		return err
-	}
-
-	return nil
+	return r.Connect(false)
 }
 
 func (r *RedisClient) getDialOptions() []redis.DialOption {

@@ -28,7 +28,7 @@ func TestRedisClient_withPassword(t *testing.T) {
 }
 
 func testRedisClient(t *testing.T, rc *RedisClient) {
-	if err := rc.Connect(); err != nil {
+	if err := rc.Connect(false); err != nil {
 		t.Fatalf("RedisClient.Connect returned an error: %v", err)
 	}
 

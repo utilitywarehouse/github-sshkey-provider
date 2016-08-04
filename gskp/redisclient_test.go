@@ -11,7 +11,7 @@ func ExampleRedisClient_Connect_reconnecErrorNoAddress() {
 	rc.ConnectTimeoutMilliseconds = 100
 	rc.ReconnectBackoffMilliseconds = 100
 	rc.ReconnectAttempts = 2
-	rc.Connect()
+	rc.Connect(true)
 
 	// Output:
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"Error connecting to redis: dial tcp: missing address"}
