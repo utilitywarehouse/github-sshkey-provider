@@ -14,20 +14,15 @@ type Redis struct {
 
 // NewRedis returns an instantiated Redis simplecache.
 func NewRedis(host string, password string, database string) *Redis {
-	ret := &Redis{
+	return &Redis{
 		gskp.NewRedisClient(host, password),
 		database,
 	}
-
-	// access to the cache is optional, so skip trying to reconnect
-	ret.ShouldTryToReconnect = false
-
-	return ret
 }
 
 // Set will set a key-value pair in the cache.
 func (c *Redis) Set(key string, value string) error {
-	if err := c.Connect(); err != nil {
+	if err := c.Connect(false); err != nil {
 		return err
 	}
 	defer c.Disconnect()
@@ -59,7 +54,7 @@ func (c *Redis) Set(key string, value string) error {
 
 // Get will retrieve a value pair from the cache.
 func (c *Redis) Get(key string) (string, error) {
-	if err := c.Connect(); err != nil {
+	if err := c.Connect(false); err != nil {
 		return "", err
 	}
 	defer c.Disconnect()
@@ -85,7 +80,7 @@ func (c *Redis) Get(key string) (string, error) {
 
 // Flush will clear the entire cache.
 func (c *Redis) Flush() error {
-	if err := c.Connect(); err != nil {
+	if err := c.Connect(false); err != nil {
 		return err
 	}
 	defer c.Disconnect()
