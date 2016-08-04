@@ -24,9 +24,9 @@ var collectorCmd = &cobra.Command{
 	Short: "starts the collector",
 	Long:  "Will poll GitHub for changes and notify agents with updates.",
 	Run: func(cmd *cobra.Command, args []string) {
-		wg := &sync.WaitGroup{}
-
 		simplelog.Infof("Starting up [collectorPollingInterval=%d]", viper.GetInt("collectorPollingInterval"))
+
+		wg := &sync.WaitGroup{}
 
 		// start ticking
 		ticker := time.NewTicker(time.Duration(viper.GetInt("collectorPollingInterval")) * time.Second)
@@ -87,7 +87,7 @@ func collectAndPublishKeys(teamID int) {
 
 	teamMembersSerialised, err := teamMembers.Marshal()
 	if err != nil {
-		simplelog.Infof("Failed to serialise the UserInfoList. Will not use the cache but will publish anyway.")
+		simplelog.Infof("Failed to serialise the UserInfoList. Will not use the cache but will try to publish anyway.")
 	} else {
 		if err := simplecache.NewRedis(
 			viper.GetString("redisHost"),
@@ -106,7 +106,7 @@ func collectAndPublishKeys(teamID int) {
 
 	authorizedKeysSnippet, err := gskp.AuthorizedKeys.GenerateSnippet(teamMembers)
 	if err != nil {
-		simplelog.Infof("Template generation failed: %v", err)
+		simplelog.Infof("Template generation failed, will not publish: %v", err)
 		return
 	}
 
