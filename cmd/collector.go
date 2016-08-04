@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp"
-	"github.com/utilitywarehouse/github-sshkey-provider/gskp/collector"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplecache"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/transporter"
@@ -64,7 +63,7 @@ var collectorCmd = &cobra.Command{
 }
 
 func findTeamID() int {
-	kc := collector.NewKeyCollector(viper.GetString("githubAccessToken"))
+	kc := gskp.NewKeyCollector(viper.GetString("githubAccessToken"))
 
 	ti, err := kc.GetTeamID(viper.GetString("organizationName"), viper.GetString("teamName"))
 	if err != nil {
@@ -78,7 +77,7 @@ func findTeamID() int {
 }
 
 func collectAndPublishKeys(teamID int) {
-	kc := collector.NewKeyCollector(viper.GetString("githubAccessToken"))
+	kc := gskp.NewKeyCollector(viper.GetString("githubAccessToken"))
 	teamMembers, err := kc.GetTeamMemberInfo(teamID)
 	if err != nil {
 		simplelog.Infof("Key collection failed: %v", err)

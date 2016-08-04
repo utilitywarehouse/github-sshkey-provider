@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/utilitywarehouse/github-sshkey-provider/gskp/collector"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
 
@@ -13,14 +12,14 @@ func init() {
 }
 
 func TestAuthorizedKeys_GenerateAuthorizedKeysFile(t *testing.T) {
-	ui := collector.UserInfoList{
-		collector.UserInfo{
+	ui := UserInfoList{
+		UserInfo{
 			Login: "user00",
 			ID:    999998,
 			Name:  "User Zero",
 			Keys:  "ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string_for_user00",
 		},
-		collector.UserInfo{
+		UserInfo{
 			Login: "user01",
 			ID:    999999,
 			Name:  "User One",

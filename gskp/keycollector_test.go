@@ -1,4 +1,4 @@
-package collector
+package gskp
 
 import (
 	"fmt"

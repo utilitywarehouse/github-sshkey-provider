@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
 	"text/template"
-
-	"github.com/utilitywarehouse/github-sshkey-provider/gskp/collector"
 )
 
 const (
@@ -41,7 +39,7 @@ type authorizedKeys struct{}
 
 // GenerateSnippet returns a string containing an snippet compatible with
 // OpenSSH authorized_keys format, based on a list of UserInfo structs.
-func (authorizedKeys) GenerateSnippet(ui collector.UserInfoList) (string, error) {
+func (authorizedKeys) GenerateSnippet(ui UserInfoList) (string, error) {
 	t := template.New("authorized_keys")
 	t, err := t.Parse(snippetTemplate)
 	if err != nil {
