@@ -14,10 +14,15 @@ type Redis struct {
 
 // NewRedis returns an instantiated Redis simplecache.
 func NewRedis(host string, password string, database string) *Redis {
-	return &Redis{
+	ret := &Redis{
 		gskp.NewRedisClient(host, password),
 		database,
 	}
+
+	// access to the cache is optional, so skip trying to reconnect
+	ret.ShouldTryToReconnect = false
+
+	return ret
 }
 
 // Set will set a key-value pair in the cache.
