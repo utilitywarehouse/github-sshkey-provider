@@ -1,7 +1,6 @@
 package gskp
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
@@ -139,7 +138,7 @@ sample snippet line 01
 
 func TestAuthorizedKeys_stripFile(t *testing.T) {
 	for i, test := range stripTestsWithoutErrors {
-		out, err := AuthorizedKeys.stripFile(strings.NewReader(test.Input))
+		out, err := AuthorizedKeys.stripFile(test.Input)
 		if err != nil {
 			t.Fatalf("AuthorizedKeys.stripFile returned an error for test #%d: %v", i, err)
 		}
@@ -150,7 +149,7 @@ func TestAuthorizedKeys_stripFile(t *testing.T) {
 	}
 
 	for i, testInput := range stripTestsWithErrors {
-		_, err := AuthorizedKeys.stripFile(strings.NewReader(testInput))
+		_, err := AuthorizedKeys.stripFile(testInput)
 		if err == nil {
 			t.Errorf("AuthorizedKeys.stripFile should have returned an error for test #%d", i)
 		}

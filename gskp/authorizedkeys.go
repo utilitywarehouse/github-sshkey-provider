@@ -4,8 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"io"
-	"os"
+	"io/ioutil"
 	"strings"
 	"text/template"
 )
@@ -54,22 +53,29 @@ func (authorizedKeys) GenerateSnippet(ui UserInfoList) (string, error) {
 	return strings.Join([]string{snippetBeginSeparator, output.String(), snippetEndSeparator}, "\n"), nil
 }
 
-// ReadAndStripFile will read an authorized_keys file and strip any portions
-// between the separators.
-func (authorizedKeys) ReadAndStripFile(filename string) (string, error) {
-	input, err := os.Open(filename)
+// Update will read an authorized_keys, strip any portions managed by this
+// service (identified by the separators) and append the provided snippet
+// at the end.
+func (authorizedKeys) Update(filename string, snippet string) error {
+	fileContents, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return "", err
+		return err
 	}
-	defer input.Close()
 
-	return AuthorizedKeys.stripFile(input)
+	strippedContents, err := AuthorizedKeys.stripFile(string(fileContents))
+	if err != nil {
+		return err
+	}
+
+	output := []byte(strings.Join([]string{strippedContents, snippet}, "\n\n"))
+
+	return ioutil.WriteFile(filename, output, 0600)
 }
 
-func (authorizedKeys) stripFile(file io.Reader) (string, error) {
+func (authorizedKeys) stripFile(fileContents string) (string, error) {
 	ret := []string{}
 
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(strings.NewReader(fileContents))
 
 	readingSnippetLines := false
 	for scanner.Scan() {
