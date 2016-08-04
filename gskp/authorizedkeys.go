@@ -106,5 +106,5 @@ func (authorizedKeys) stripFile(fileContents string) (string, error) {
 		return "", err
 	}
 
-	return strings.Join(ret, "\n"), nil
+	return strings.TrimSpace(strings.Join(ret, "\n")), nil
 }

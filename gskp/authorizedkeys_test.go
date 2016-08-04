@@ -114,8 +114,7 @@ sample line 01
 `,
 		`this_is_a_test_authorized_keys_file
 sample line 00
-sample line 01
-`,
+sample line 01`,
 	},
 }
 
