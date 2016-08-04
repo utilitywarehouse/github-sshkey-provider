@@ -99,7 +99,7 @@ func (r *RedisClient) Disconnect() error {
 func (r *RedisClient) Reconnect(backoffDuration uint) error {
 	simplelog.Infof("Will try to reconnect to redis at %s", r.Host)
 	if err := r.Disconnect(); err != nil {
-		return err
+		simplelog.Infof("Ignoring error when trying to disconnect: %v", err)
 	}
 
 	if backoffDuration == 0 {
