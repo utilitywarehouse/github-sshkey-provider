@@ -32,3 +32,6 @@ githubAccessToken: token_to_use_with_the_github_api
 # collectorPollingInterval determines the number of seconds between collection
 # cycles (ie. how often the collector will poll the GitHub API)
 # collectorPollingInterval: 900
+
+# Specifies the path to the authorized_keys file that the agent is managing.
+# authorizedKeysPath: authorized_keys
