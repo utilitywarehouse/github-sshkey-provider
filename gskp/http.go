@@ -11,9 +11,12 @@ import (
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
 
-type httpResponse map[string]interface{}
+// HTTPResponse can be used to construct a response for an endpoint. It
+// provides the Marshal function to serialise it.
+type HTTPResponse map[string]interface{}
 
-func (r httpResponse) Marshal() string {
+// Marshal will return the JSON encoded string of the HTTPResponse.
+func (r HTTPResponse) Marshal() string {
 	jsonText, _ := json.Marshal(r)
 
 	return string(jsonText)
@@ -62,7 +65,7 @@ func (h *HTTPServer) HandleGet(pattern string, handler func(http.ResponseWriter,
 	h.mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
 			w.WriteHeader(http.StatusMethodNotAllowed)
-			fmt.Fprintf(w, httpResponse{"error": "method not allowed"}.Marshal())
+			fmt.Fprintf(w, HTTPResponse{"error": "method not allowed"}.Marshal())
 			return
 		}
 
@@ -86,13 +89,11 @@ func (h *HTTPServer) StopListening(timeoutSeconds int) {
 func (h *HTTPServer) endpointStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintf(w, httpResponse{"error": "method not allowed"}.Marshal())
+		fmt.Fprintf(w, HTTPResponse{"error": "method not allowed"}.Marshal())
 		return
 	}
 
 	simplelog.Debugf("Responding to /status request from %v", r.RemoteAddr)
 
-	fmt.Fprintf(w, httpResponse{
-		"status": "ok",
-	}.Marshal())
+	fmt.Fprintf(w, HTTPResponse{"status": "ok"}.Marshal())
 }
