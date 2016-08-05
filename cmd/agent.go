@@ -50,7 +50,7 @@ var agentCmd = &cobra.Command{
 
 				err := gskp.AuthorizedKeys.Update(viper.GetString("authorizedKeysPath"), message)
 				if err != nil {
-					simplelog.Infof("Error occured while trying to update '%s': %v",
+					simplelog.Infof("Error occurred while trying to update '%s': %v",
 						viper.GetString("authorizedKeysPath"), err)
 				}
 

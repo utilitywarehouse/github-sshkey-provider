@@ -91,10 +91,10 @@ func (t *Redis) Listen(callback func(string) error) error {
 					t.listenerLastError = nil
 				}
 			case error:
-				simplelog.Infof("Error occured on listener: %v", v)
+				simplelog.Infof("Error occurred on listener: %v", v)
 
 				if t.listenerLastError == v {
-					simplelog.Errorf("Error occured twice in a row, giving up")
+					simplelog.Errorf("Error occurred twice in a row, giving up")
 					return v
 				}
 
