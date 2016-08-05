@@ -18,6 +18,8 @@ dependencies:
   override:
     - glide i
     - CGO_ENABLED=0 go build -v -ldflags '-s -extldflags "-static"'
+  cache_directories:
+    - vendor
 
 test:
   pre:
