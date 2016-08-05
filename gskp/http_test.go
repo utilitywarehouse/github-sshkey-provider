@@ -102,7 +102,6 @@ func TestHTTPServer_unsupportedMethod(t *testing.T) {
 
 	for endpoint := range testEndpointsMap {
 		for method, expected := range testUnsupportedMethodsList {
-			fmt.Println(method, endpoint, expected)
 			test405Response(t, method, endpoint, expected)
 		}
 	}
