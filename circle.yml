@@ -8,3 +8,7 @@ machine:
 dependencies:
   pre:
     - docker-compose -f docker-compose-integration-testing.yml up -d
+
+test:
+  override:
+    - go test -v -tags integration -cover ./...
