@@ -33,6 +33,15 @@ githubAccessToken: token_to_use_with_the_github_api
 # cycles (ie. how often the collector will poll the GitHub API)
 # collectorPollingInterval: 900
 
+
+# collectorHTTPAddress set the address on which the collector's internal HTTP
+# server will be listening
+# collectorHTTPAddress: :3000
+
+# collectorHTTPTimeout sets a timeout (in seconds) for the HTTP server the
+# collector uses
+# collectorHTTPTimeout: 10
+
 # agentRecoverInterval determines the number of seconds that the agent will
 # wait before trying to reconnect to the transport mechanism after an error
 # has caused the connection to drop.

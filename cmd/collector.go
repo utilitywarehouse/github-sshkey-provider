@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -31,6 +32,9 @@ var collectorCmd = &cobra.Command{
 		// start ticking
 		ticker := time.NewTicker(time.Duration(viper.GetInt("collectorPollingInterval")) * time.Second)
 
+		// create http server
+		httpServer := gskp.NewHTTPServer()
+
 		// handle interrupt
 		sigChannel := make(chan os.Signal, 1)
 		signal.Notify(sigChannel, os.Interrupt)
@@ -38,14 +42,25 @@ var collectorCmd = &cobra.Command{
 			<-sigChannel
 			simplelog.Infof("Shutdown started, waiting for goroutines to return")
 			ticker.Stop()
+			httpServer.StopListening(viper.GetInt("collectorHTTPTimeout"))
 			wg.Wait()
 
 			simplelog.Infof("Shutdown complete, exiting now")
 			os.Exit(0)
 		}()
 
+		// start http server
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			httpServer.Listen(viper.GetString("collectorHTTPAddress"), viper.GetInt("collectorHTTPTimeout"))
+		}()
+
 		// collection loop
 		teamID := findTeamID()
+		setupAuthorizedKeysHTTPEndpoint(httpServer, teamID)
+
 		for {
 			wg.Add(1)
 
@@ -65,7 +80,7 @@ func findTeamID() int {
 
 	ti, err := kc.GetTeamID(viper.GetString("organizationName"), viper.GetString("teamName"))
 	if err != nil {
-		simplelog.Errorf("Error occured when trying to find the team's ID: %v", err)
+		simplelog.Errorf("Error occurred when trying to find the team's ID: %v", err)
 		os.Exit(1)
 	}
 
@@ -100,7 +115,7 @@ func collectAndPublishKeys(teamID int) {
 				return
 			}
 
-			simplelog.Infof("Ignoring error that occured while trying to write in the cache: %v", err)
+			simplelog.Infof("Ignoring error that occurred while trying to write in the cache: %v", err)
 		}
 	}
 
@@ -120,4 +135,28 @@ func collectAndPublishKeys(teamID int) {
 	if err != nil {
 		simplelog.Infof("Could not publish to redis: %v", err)
 	}
+}
+
+func setupAuthorizedKeysHTTPEndpoint(httpServer *gskp.HTTPServer, teamID int) {
+	httpServer.HandleGet("/authorized_keys", func(w http.ResponseWriter, r *http.Request) {
+		value, err := simplecache.NewRedis(
+			viper.GetString("redisHost"),
+			viper.GetString("redisPassword"),
+			viper.GetString("redisCacheDB")).Get(fmt.Sprintf("userinfolist_%d", teamID))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, gskp.HTTPResponse{"error": "unexpected error occurred"}.Marshal())
+		}
+
+		teamMembers := gskp.UserInfoList{}
+		teamMembers.Unmarshal(value)
+
+		authorizedKeysSnippet, err := gskp.AuthorizedKeys.GenerateSnippet(teamMembers)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, gskp.HTTPResponse{"error": "unexpected error occurred"}.Marshal())
+		}
+
+		fmt.Fprintf(w, gskp.HTTPResponse{"authorized_keys": authorizedKeysSnippet}.Marshal())
+	})
 }

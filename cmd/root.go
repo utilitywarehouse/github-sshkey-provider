@@ -63,6 +63,8 @@ func setConfigDefaults() {
 	viper.SetDefault("redisHost", ":6379")
 	viper.SetDefault("redisPassword", "")
 	viper.SetDefault("collectorPollingInterval", 900)
+	viper.SetDefault("collectorHTTPTimeout", 10)
+	viper.SetDefault("collectorHTTPAddress", ":3000")
 	viper.SetDefault("agentRecoverInterval", 60)
 	viper.SetDefault("authorizedKeysPath", "authorized_keys")
 
