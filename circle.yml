@@ -1,4 +1,6 @@
 machine:
+  python:
+    version: 2.7.11
   pre:
     - curl -sSL https://s3.amazonaws.com/circle-downloads/install-circleci-docker.sh | bash -s -- 1.10.0
     - pip install --upgrade docker-compose==1.8.0
@@ -7,7 +9,7 @@ machine:
 
 dependencies:
   pre:
-    - curl https://glide.sh/get | sh
+    - mkdir -p "${GOPATH%%:*}/bin" && curl https://glide.sh/get | GO_PATH="${GOPATH%%:*}" sh
   override:
     - glide i
     - go build -v
