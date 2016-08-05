@@ -39,15 +39,17 @@ func NewHTTPServer() *HTTPServer {
 }
 
 // Listen will start listening for incoming connections.
-func (h *HTTPServer) Listen(address string) error {
+func (h *HTTPServer) Listen(address string, timeoutSeconds int) error {
 	h.server = &graceful.Server{
-		Timeout: 10 * time.Second,
+		Timeout: time.Duration(timeoutSeconds) * time.Second,
 
 		Server: &http.Server{
 			Addr:    address,
 			Handler: h.mux,
 		},
 	}
+
+	simplelog.Infof("HTTP server listening on %s", address)
 
 	h.server.ListenAndServe()
 
@@ -72,9 +74,13 @@ func (h *HTTPServer) HandleGet(pattern string, handler func(http.ResponseWriter,
 
 // StopListening is a blocking operation that waits for the HTTPServer to close
 // all connections and shutdown before returning.
-func (h *HTTPServer) StopListening() {
-	h.server.Stop(10 * time.Second)
+func (h *HTTPServer) StopListening(timeoutSeconds int) {
+	simplelog.Infof("HTTP server shutdown started with a timeout of %d seconds", timeoutSeconds)
+
+	h.server.Stop(time.Duration(timeoutSeconds) * time.Second)
 	<-h.server.StopChan()
+
+	simplelog.Infof("HTTP server shutdown complete")
 }
 
 func (h *HTTPServer) endpointStatus(w http.ResponseWriter, r *http.Request) {

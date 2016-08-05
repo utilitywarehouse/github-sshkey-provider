@@ -15,7 +15,7 @@ func init() {
 	simplelog.DebugEnabled = true
 }
 
-func startNewTestHTTPServer(address string) *HTTPServer {
+func startNewTestHTTPServer() *HTTPServer {
 	h := NewHTTPServer()
 
 	h.HandleGet("/long_operation", func(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +23,7 @@ func startNewTestHTTPServer(address string) *HTTPServer {
 		fmt.Fprintf(w, "this was a long operation")
 	})
 
-	go h.Listen(address)
+	go h.Listen(":35432", 10)
 	time.Sleep(100 * time.Millisecond)
 
 	return h
@@ -77,8 +77,8 @@ var testEndpointsMap = map[string]string{
 }
 
 func TestHTTPServer_endpoints(t *testing.T) {
-	h := startNewTestHTTPServer(":35432")
-	defer h.StopListening()
+	h := startNewTestHTTPServer()
+	defer h.StopListening(10)
 
 	for endpoint, expected := range testEndpointsMap {
 		testGetResponse(t, endpoint, expected)
@@ -96,8 +96,8 @@ var testUnsupportedMethodsList = map[string]string{
 }
 
 func TestHTTPServer_unsupportedMethod(t *testing.T) {
-	h := startNewTestHTTPServer(":35432")
-	defer h.StopListening()
+	h := startNewTestHTTPServer()
+	defer h.StopListening(10)
 
 	for method, expected := range testUnsupportedMethodsList {
 		test405Response(t, method, expected)
@@ -107,7 +107,7 @@ func TestHTTPServer_unsupportedMethod(t *testing.T) {
 func TestHTTPServer_connectionDrain(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
-	h := startNewTestHTTPServer(":35432")
+	h := startNewTestHTTPServer()
 	time.Sleep(100 * time.Millisecond)
 
 	wg.Add(1)
@@ -128,7 +128,7 @@ func TestHTTPServer_connectionDrain(t *testing.T) {
 	}()
 	time.Sleep(100 * time.Millisecond)
 
-	h.StopListening()
+	h.StopListening(10)
 
 	wg.Wait()
 
