@@ -7,8 +7,13 @@ machine:
 
 dependencies:
   pre:
-    - docker-compose -f docker-compose-integration-testing.yml up -d
+    - curl https://glide.sh/get | sh
+  override:
+    - glide i
+    - go build -v
 
 test:
+  pre:
+    - docker-compose -f docker-compose-integration-testing.yml up -d
   override:
     - go test -v -tags integration -cover ./...
