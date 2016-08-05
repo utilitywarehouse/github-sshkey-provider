@@ -46,7 +46,7 @@ func testGetResponse(t *testing.T, endpoint string, expectedResponse string) {
 	}
 }
 
-func test405Response(t *testing.T, method string, expected string) {
+func test405Response(t *testing.T, method string, endpoint string, expected string) {
 	req, err := http.NewRequest(method, "http://localhost:35432/status", nil)
 	if err != nil {
 		t.Fatalf("Could not construct a proper %s request", method)
@@ -73,7 +73,8 @@ func test405Response(t *testing.T, method string, expected string) {
 }
 
 var testEndpointsMap = map[string]string{
-	"status": `{"status":"ok"}`,
+	"status":         `{"status":"ok"}`,
+	"long_operation": `this was a long operation`,
 }
 
 func TestHTTPServer_endpoints(t *testing.T) {
@@ -99,8 +100,11 @@ func TestHTTPServer_unsupportedMethod(t *testing.T) {
 	h := startNewTestHTTPServer()
 	defer h.StopListening(10)
 
-	for method, expected := range testUnsupportedMethodsList {
-		test405Response(t, method, expected)
+	for endpoint := range testEndpointsMap {
+		for method, expected := range testUnsupportedMethodsList {
+			fmt.Println(method, endpoint, expected)
+			test405Response(t, method, endpoint, expected)
+		}
 	}
 }
 
