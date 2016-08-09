@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
-	"github.com/utilitywarehouse/github-sshkey-provider/gskp/transporter"
 )
 
 func init() {
@@ -26,7 +25,7 @@ var agentCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		simplelog.Infof("Starting up [agentRecoverInterval=%d]", viper.GetInt("agentRecoverInterval"))
 
-		rt := transporter.NewRedis(
+		rt := gskp.NewRedisTransporter(
 			viper.GetString("redisHost"),
 			viper.GetString("redisPassword"),
 			viper.GetString("redisChannel"),

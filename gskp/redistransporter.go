@@ -1,14 +1,13 @@
-package transporter
+package gskp
 
 import (
 	"github.com/garyburd/redigo/redis"
-	"github.com/utilitywarehouse/github-sshkey-provider/gskp"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
 
-// Redis implements the transporter interface using a redis backend.
-type Redis struct {
-	*gskp.RedisClient
+// RedisTransporter implements the transporter interface using a redis backend.
+type RedisTransporter struct {
+	*RedisClient
 	channel            string
 	pubsubConn         redis.PubSubConn
 	listenerEnabled    bool
@@ -16,10 +15,10 @@ type Redis struct {
 	listenerLastError  error
 }
 
-// NewRedis returns an instantiated Redis transporter struct.
-func NewRedis(host string, password string, channel string) *Redis {
-	return &Redis{
-		gskp.NewRedisClient(host, password),
+// NewRedisTransporter returns an instantiated Redis transporter struct.
+func NewRedisTransporter(host string, password string, channel string) *RedisTransporter {
+	return &RedisTransporter{
+		NewRedisClient(host, password),
 		channel,
 		redis.PubSubConn{},
 		true,
@@ -30,7 +29,7 @@ func NewRedis(host string, password string, channel string) *Redis {
 
 // Publish opens a new connection to the redis host, publishes a message to a
 // channel and closes the connection.
-func (t *Redis) Publish(message string) error {
+func (t *RedisTransporter) Publish(message string) error {
 	if err := t.Connect(true); err != nil {
 		return err
 	}
@@ -46,9 +45,9 @@ func (t *Redis) Publish(message string) error {
 	return nil
 }
 
-// Listen instructs the Redis transporter to subscribe to a redis channel and start
-// listening for messages.
-func (t *Redis) Listen(callback func(string) error) error {
+// Listen instructs the RedisTransporter to subscribe to a redis channel and
+// start listening for messages.
+func (t *RedisTransporter) Listen(callback func(string) error) error {
 	t.listenerEnabled = true
 	t.listenerLastError = nil
 
@@ -113,7 +112,7 @@ func (t *Redis) Listen(callback func(string) error) error {
 }
 
 // StopListening instructs the listener to stop listening and return.
-func (t *Redis) StopListening() error {
+func (t *RedisTransporter) StopListening() error {
 	t.listenerEnabled = false
 
 	if t.listenerSubscribed {

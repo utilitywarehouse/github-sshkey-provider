@@ -1,4 +1,4 @@
-package transporter
+package gskp
 
 import "errors"
 
@@ -9,9 +9,9 @@ var (
 	ErrListenerDisconnect = errors.New("Listener callback has requested to disconnect.")
 )
 
-// Interface to be implemented for providing communication capabilities between
-// the components of the application.
-type Interface interface {
+// Transporter to be implemented for providing communication capabilities
+// between the components of the application.
+type Transporter interface {
 	Publish(string) error
 	Listen(func(string) error) error
 	StopListening() error

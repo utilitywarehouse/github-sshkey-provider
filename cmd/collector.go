@@ -13,7 +13,6 @@ import (
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplecache"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
-	"github.com/utilitywarehouse/github-sshkey-provider/gskp/transporter"
 )
 
 func init() {
@@ -125,7 +124,7 @@ func collectAndPublishKeys(teamID int) {
 		return
 	}
 
-	rt := transporter.NewRedis(
+	rt := gskp.NewRedisTransporter(
 		viper.GetString("redisHost"),
 		viper.GetString("redisPassword"),
 		viper.GetString("redisChannel"),
