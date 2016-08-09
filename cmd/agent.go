@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -43,16 +46,12 @@ var agentCmd = &cobra.Command{
 			rt.StopListening()
 		}()
 
+		getBootstrapSnippet()
+
 		<-timer.C
 		for isActive {
 			if err := rt.Listen(func(message string) error {
-				simplelog.Infof("Updating %s", viper.GetString("authorizedKeysPath"))
-
-				err := gskp.AuthorizedKeys.Update(viper.GetString("authorizedKeysPath"), message)
-				if err != nil {
-					simplelog.Infof("Error occurred while trying to update '%s': %v",
-						viper.GetString("authorizedKeysPath"), err)
-				}
+				updateAuthorizedKeys(message)
 
 				return nil
 			}); err != nil {
@@ -73,6 +72,40 @@ var agentCmd = &cobra.Command{
 	},
 }
 
-func updateAuthorizedKeys(rt *transporter.Redis) {
+func getBootstrapSnippet() {
+	simplelog.Infof("Trying to get an initial version of the snippet from %s", viper.GetString("agentBootstrapURL"))
 
+	resp, err := http.Get(viper.GetString("agentBootstrapURL"))
+	if err != nil {
+		simplelog.Infof("Could not reach bootstrap URL, ignoring error: %v", err)
+		return
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		simplelog.Infof("Error occurred while trying to read the response from the boostrap URL, ignoring: %v", err)
+		return
+	}
+
+	data := gskp.HTTPResponse{}
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		simplelog.Infof("Error occurred while trying to decode the response from the boostrap URL, ignoring: %v", err)
+		return
+	}
+
+	updateAuthorizedKeys(data["authorized_keys"].(string))
+}
+
+func updateAuthorizedKeys(snippet string) {
+	simplelog.Infof("Updating %s", viper.GetString("authorizedKeysPath"))
+
+	err := gskp.AuthorizedKeys.Update(viper.GetString("authorizedKeysPath"), snippet)
+	if err == gskp.ErrAuthorizedKeysNotChanged {
+		simplelog.Infof("The authorized_keys snippet makes no changes to the file, ignoring")
+	} else if err != nil {
+		simplelog.Infof("Error occurred while trying to update '%s': %v",
+			viper.GetString("authorizedKeysPath"), err)
+	}
 }

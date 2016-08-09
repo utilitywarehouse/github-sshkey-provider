@@ -66,6 +66,7 @@ func setConfigDefaults() {
 	viper.SetDefault("collectorHTTPTimeout", 10)
 	viper.SetDefault("collectorHTTPAddress", ":3000")
 	viper.SetDefault("agentRecoverInterval", 60)
+	viper.SetDefault("agentBootstrapURL", "http://localhost:3000/authorized_keys")
 	viper.SetDefault("authorizedKeysPath", "authorized_keys")
 
 	viper.Set("redisChannel", "gskp")

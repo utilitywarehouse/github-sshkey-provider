@@ -154,3 +154,23 @@ func TestAuthorizedKeys_stripFile(t *testing.T) {
 		}
 	}
 }
+
+func TestAuthorizedKeys_update_noChange(t *testing.T) {
+	current := `this_is_a_test_authorized_keys_file
+sample line 00
+
+# BEGIN: github_sshkey_provider
+sample snippet line 00
+sample snippet line 01
+# END: github_sshkey_provider
+`
+	snippet := `# BEGIN: github_sshkey_provider
+sample snippet line 00
+sample snippet line 01
+# END: github_sshkey_provider`
+
+	_, err := AuthorizedKeys.update(current, snippet)
+	if err != ErrAuthorizedKeysNotChanged {
+		t.Errorf("AuthorizedKeys.update should have returned ErrAuthorizedKeysNotChanged but instead got: %v", err)
+	}
+}

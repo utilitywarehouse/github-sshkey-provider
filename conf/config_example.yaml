@@ -33,7 +33,6 @@ githubAccessToken: token_to_use_with_the_github_api
 # cycles (ie. how often the collector will poll the GitHub API)
 # collectorPollingInterval: 900
 
-
 # collectorHTTPAddress set the address on which the collector's internal HTTP
 # server will be listening
 # collectorHTTPAddress: :3000
@@ -46,6 +45,10 @@ githubAccessToken: token_to_use_with_the_github_api
 # wait before trying to reconnect to the transport mechanism after an error
 # has caused the connection to drop.
 # agentRecoverInterval: 60
+
+# agentBootstrapURL determines the URL that the agent can contact to get the
+# initial version of the authorized_keys snippet produced by the collector.
+# agentBootstrapURL: http://localhost:3000/authorized_keys
 
 # Specifies the path to the authorized_keys file that the agent is managing.
 # authorizedKeysPath: authorized_keys

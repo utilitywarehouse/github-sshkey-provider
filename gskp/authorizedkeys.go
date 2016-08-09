@@ -32,6 +32,11 @@ var (
 	// ErrAuthorizedKeysFileMalformed is returned when the authorized_keys file
 	// that is being read is found to be malformed.
 	ErrAuthorizedKeysFileMalformed = errors.New("The authorized_keys file is malformed")
+
+	// ErrAuthorizedKeysNotChanged is returned if the authorized_keys snippet
+	// that is to be written to the file brings no changes to the resulting
+	// authorized_keys file.
+	ErrAuthorizedKeysNotChanged = errors.New("The authorized_keys has no changes")
 )
 
 type authorizedKeys struct{}
@@ -62,14 +67,27 @@ func (authorizedKeys) Update(filename string, snippet string) error {
 		return err
 	}
 
-	strippedContents, err := AuthorizedKeys.stripFile(string(fileContents))
+	output, err := AuthorizedKeys.update(string(fileContents), snippet)
 	if err != nil {
 		return err
 	}
 
-	output := []byte(strings.Join([]string{strippedContents, snippet}, "\n\n"))
-
 	return ioutil.WriteFile(filename, output, 0600)
+}
+
+func (authorizedKeys) update(fileContents string, snippet string) ([]byte, error) {
+	strippedContents, err := AuthorizedKeys.stripFile(fileContents)
+	if err != nil {
+		return nil, err
+	}
+
+	output := strings.Join([]string{strippedContents, "\n\n", snippet, "\n"}, "")
+
+	if fileContents == output {
+		return nil, ErrAuthorizedKeysNotChanged
+	}
+
+	return []byte(output), nil
 }
 
 func (authorizedKeys) stripFile(fileContents string) (string, error) {
