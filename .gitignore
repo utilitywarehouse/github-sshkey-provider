@@ -3,3 +3,6 @@
 
 conf/*
 !conf/config_example.yaml
+
+vendor/
+
