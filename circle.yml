@@ -18,5 +18,5 @@ deployment:
     branch: master
     commands:
       - docker tag utilitywarehouse/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 utilitywarehouse/$CIRCLE_PROJECT_REPONAME:latest
-      - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+      - docker login -e none@none.com -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
       - docker push utilitywarehouse/$CIRCLE_PROJECT_REPONAME
