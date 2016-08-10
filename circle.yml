@@ -20,4 +20,7 @@ deployment:
       - docker tag utilitywarehouse/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 utilitywarehouse/$CIRCLE_PROJECT_REPONAME:latest
       - docker login -e none@none.com -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
       - docker push utilitywarehouse/$CIRCLE_PROJECT_REPONAME
-      - /bin/sh ./scripts/deploy.sh $KUBERNETES_URL $CIRCLE_PROJECT_REPONAME $CIRCLE_SHA1
+      - >-
+        KUBERNETES_URL=$KUBERNETES_URL_DEV
+        KUBERNETES_TOKEN=$KUBERNETES_TOKEN_DEV
+        /bin/sh ./scripts/deploy.sh $KUBERNETES_URL $CIRCLE_PROJECT_REPONAME $CIRCLE_SHA1
