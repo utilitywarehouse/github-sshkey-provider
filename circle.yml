@@ -11,3 +11,12 @@ dependencies:
 test:
   override:
     - /bin/sh ./scripts/run.sh test_and_build
+    - docker build -t utilitywarehouse/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 .
+
+deployment:
+  publish:
+    branch: master
+    commands:
+      - docker tag utilitywarehouse/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 utilitywarehouse/$CIRCLE_PROJECT_REPONAME:latest
+      - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+      - docker push utilitywarehouse/$CIRCLE_PROJECT_REPONAME
