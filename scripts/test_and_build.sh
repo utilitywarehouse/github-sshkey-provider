@@ -2,7 +2,6 @@
 
 set -o errexit
 set -o nounset
-set -o pipefail
 
 apk add --no-cache curl git redis
 

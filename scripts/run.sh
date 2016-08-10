@@ -2,7 +2,6 @@
 
 set -o errexit
 set -o nounset
-set -o pipefail
 
 if [  $# -ne 1 ]; then
     echo "usage: ./scripts/run.sh <script>"

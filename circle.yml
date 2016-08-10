@@ -5,7 +5,8 @@ machine:
     - docker
 
 dependencies:
-  override: []
+  override:
+    - /bin/true
 
 test:
   override:
