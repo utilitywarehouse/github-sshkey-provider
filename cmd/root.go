@@ -23,7 +23,6 @@ var (
 		Short: appName,
 		Long:  "Manages authorized_keys files based on GitHub team membership.",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(viper.GetBool("debugLog"))
 			cmd.Help()
 		},
 	}
