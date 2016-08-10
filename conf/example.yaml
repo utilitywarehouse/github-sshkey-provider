@@ -3,8 +3,8 @@
 # This is an example YAML config file.
 
 # The config file can be written in any format that viper understands
-# (https://github.com/spf13/viper) understands and needs to be named like
-# `config.ext` (eg. `config.yaml`)
+# (https://github.com/spf13/viper) understands and needs to be named as the
+# environment name: `${UW_ENVIRONMENT}.ext` (eg. `development.yaml`)
 
 # The config file can be placed in the same path with the binary or in `./conf`
 

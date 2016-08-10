@@ -2,7 +2,6 @@
 .DS_Store
 
 conf/*
-!conf/config_example.yaml
+!conf/example.yaml
 
 vendor/
-

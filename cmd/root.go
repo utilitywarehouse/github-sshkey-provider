@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -47,9 +48,13 @@ func init() {
 }
 
 func initConfig() {
-	viper.SetConfigName("config")
+	environmentName := os.Getenv("UW_ENVIRONMENT")
+	if environmentName == "" {
+		environmentName = "default"
+	}
+
+	viper.SetConfigName(environmentName)
 	viper.AddConfigPath("./conf")
-	viper.AddConfigPath(".")
 
 	viper.SetEnvPrefix(confEnvPrefix)
 	viper.AutomaticEnv()
