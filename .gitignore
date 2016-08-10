@@ -5,3 +5,5 @@ conf/*
 !conf/example.yaml
 
 vendor/
+github-sshkey-provider
+
