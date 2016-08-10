@@ -1,28 +1,12 @@
 machine:
-  python:
-    version: 2.7.11
   pre:
     - curl -sSL https://s3.amazonaws.com/circle-downloads/install-circleci-docker.sh | bash -s -- 1.10.0
   services:
     - docker
 
 dependencies:
-  pre:
-    - pip install --upgrade docker-compose==1.8.0
-    - >-
-      export GOPATH="${GOPATH%%:*}" &&
-      export PROJECT_PATH="github.com/${CIRCLE_PROJECT_USERNAME}" &&
-      mkdir -p "${GOPATH}/bin" "${GOPATH}/src/${PROJECT_PATH}" &&
-      ln -s "${HOME}/${CIRCLE_PROJECT_REPONAME}" "${GOPATH}/src/${PROJECT_PATH}/${CIRCLE_PROJECT_REPONAME}" &&
-      curl https://glide.sh/get | sh
-  override:
-    - glide i
-    - CGO_ENABLED=0 go build -v -ldflags '-s -extldflags "-static"'
-  cache_directories:
-    - vendor
+  override: []
 
 test:
-  pre:
-    - docker-compose -f docker-compose-integration-testing.yml up -d
   override:
-    - go test -v -tags integration -cover $(glide novendor)
+    - /bin/sh ./scripts/run.sh test_and_build
