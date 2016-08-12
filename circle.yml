@@ -25,4 +25,4 @@ deployment:
       - >-
         KUBERNETES_URL=$KUBERNETES_URL_DEV
         KUBERNETES_TOKEN=$KUBERNETES_TOKEN_DEV
-        /bin/sh ./scripts/deploy.sh $KUBERNETES_URL $CIRCLE_PROJECT_REPONAME $CIRCLE_SHA1
+        /bin/sh ./scripts/deploy.sh github-sshkey-provider-collector collector $DOCKER_IMAGE_NAME:$CIRCLE_SHA1

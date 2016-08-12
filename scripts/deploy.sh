@@ -3,8 +3,8 @@
 set -o errexit
 set -o nounset
 
-if [ $# -ne 2 ]; then
-    echo "usage: ./scripts/deploy.sh <repo_name> <git_sha>"
+if [ $# -ne 3 ]; then
+    echo "usage: ./scripts/deploy.sh <deployment> <container> <image>"
     exit 1
 fi
 
@@ -18,8 +18,9 @@ if [ -z ${KUBERNETES_TOKEN:-} ]; then
     exit 1
 fi
 
-repo_name=$1
-git_sha=$2
+deployment=$1
+container=$2
+image=$3
 
 payload () {
     cat <<-PAYLOAD
@@ -29,8 +30,8 @@ payload () {
                 "spec": {
                     "containers": [
                         {
-                            "name": "${repo_name}-${1}",
-                            "image": "docker.io/utilitywarehouse/$repo_name:$git_sha"
+                            "name": "${container}",
+                            "image": "${image}"
                         }
                     ]
                 }
@@ -41,7 +42,7 @@ PAYLOAD
 }
 
 curl -k -XPATCH \
-    -d "$(payload collector)" \
+    -d "$(payload)" \
     -H "Content-Type: application/strategic-merge-patch+json" \
     -H "Authorization: Bearer ${KUBERNETES_TOKEN}" \
-    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/default/deployments/${repo_name}-collector"
+    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/default/deployments/${deployment}"
