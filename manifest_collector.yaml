@@ -38,6 +38,14 @@ spec:
         image: redis
         args:
           - --requirepass $(GSKP_REDISPASSWORD)
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+        ports:
+        - containerPort: 6379
+          name: redis
+          protocol: TCP
         env:
         - name: GSKP_REDISPASSWORD
           valueFrom:
@@ -48,6 +56,14 @@ spec:
         image: utilitywarehouse/github-sshkey-provider
         args:
           - collector
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
         env:
         - name: GSKP_REDISPASSWORD
           valueFrom:
