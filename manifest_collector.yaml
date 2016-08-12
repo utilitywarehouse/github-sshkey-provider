@@ -10,8 +10,12 @@ spec:
     protocol: TCP
     port: 80
     targetPort: 3000
+  - name: redis
+    protocol: TCP
+    port: 6379
+    targetPort: 6379
   selector:
-    app: github-sshkey-provider
+    app: github-sshkey-provider-collector
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -22,21 +26,33 @@ spec:
   template:
     metadata:
       labels:
-        app: github-sshkey-provider
+        app: github-sshkey-provider-collector
     spec:
       containers:
       - name: redis
         image: redis
-        ports:
+        args:
+          - --requirepass $(GSKP_REDISPASSWORD)
+        env:
+        - name: GSKP_REDISPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: github-sshkey-provider-secrets
+              key: redis-password
       - name: collector
         image: utilitywarehouse/github-sshkey-provider
         args:
           - collector
         env:
+        - name: GSKP_REDISPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: github-sshkey-provider-secrets
+              key: redis-password
         - name: GSKP_GITHUBACCESSTOKEN
           valueFrom:
             secretKeyRef:
-              name: github-sshkey-provider-secret
+              name: github-sshkey-provider-secrets
               key: github-access-token
         # see the example config file for more information on the values below
         - name: GSKP_ORGANIZATIONNAME
