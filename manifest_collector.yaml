@@ -15,18 +15,23 @@ spec:
     port: 6379
     targetPort: 6379
   selector:
-    app: github-sshkey-provider-collector
+    app: github-sshkey-provider
+    appComponent: collector
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
+  labels:
+    app: github-sshkey-provider
   name: github-sshkey-provider-collector
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: github-sshkey-provider-collector
+        app: github-sshkey-provider
+        appComponent: collector
+      name: github-sshkey-provider-collector
     spec:
       containers:
       - name: redis
