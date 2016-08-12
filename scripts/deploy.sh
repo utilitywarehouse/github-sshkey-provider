@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 
 if [ $# -ne 3 ]; then
-    echo "usage: ./scripts/deploy.sh <deployment> <container> <image>"
+    echo "usage: ./scripts/deploy.sh <resource> <container> <image>"
     exit 1
 fi
 
@@ -18,7 +18,7 @@ if [ -z ${KUBERNETES_TOKEN:-} ]; then
     exit 1
 fi
 
-deployment=$1
+resource=$1
 container=$2
 image=$3
 
@@ -45,4 +45,4 @@ curl -k -XPATCH \
     -d "$(payload)" \
     -H "Content-Type: application/strategic-merge-patch+json" \
     -H "Authorization: Bearer ${KUBERNETES_TOKEN}" \
-    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/default/deployments/${deployment}"
+    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/default/${resource}"
