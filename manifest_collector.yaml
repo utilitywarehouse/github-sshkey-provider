@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: github-sshkey-provider
+  labels:
+    app: github-sshkey-provider
+spec:
+  ports:
+  - name: web
+    protocol: TCP
+    port: 80
+    targetPort: 3000
+  selector:
+    app: github-sshkey-provider
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: github-sshkey-provider-collector
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: github-sshkey-provider
+    spec:
+      containers:
+      - name: redis
+        image: redis
+        ports:
+      - name: collector
+        image: utilitywarehouse/github-sshkey-provider
+        args:
+          - collector
+        env:
+        - name: GSKP_GITHUBACCESSTOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-sshkey-provider-secret
+              key: github-access-token
+        # see the example config file for more information on the values below
+        - name: GSKP_ORGANIZATIONNAME
+          value:
+        - name: GSKP_TEAMNAME
+          value:
+      imagePullSecrets:
+        - name: dockerhub-key
