@@ -109,12 +109,10 @@ func collectAndPublishKeys(teamID int) {
 			viper.GetString("redisCacheDB"),
 		).Set(fmt.Sprintf("userinfolist_%d", teamID), teamMembersSerialised); err != nil {
 			if err == simplecache.ErrValueHasNotChanged {
-				simplelog.Infof("Team members have not changed since last time, will not publish anything.")
-
-				return
+				simplelog.Infof("Team members have not changed since last time, but will publish anyway.")
+			} else {
+				simplelog.Errorf("Ignoring error that occurred while trying to write in the cache: %v", err)
 			}
-
-			simplelog.Infof("Ignoring error that occurred while trying to write in the cache: %v", err)
 		}
 	}
 
