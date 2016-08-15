@@ -73,7 +73,7 @@ func test405Response(t *testing.T, method string, endpoint string, expected stri
 }
 
 var testEndpointsMap = map[string]string{
-	"status":         `{"status":"ok"}`,
+	"status":         `{"git_sha":"","image":"","status":"ok"}`,
 	"long_operation": `this was a long operation`,
 }
 
