@@ -13,16 +13,20 @@ dependencies:
 test:
   override:
     - /bin/sh ./scripts/run.sh test_and_build
-    - docker build --build-arg DOCKER_IMAGE_NAME=$DOCKER_IMAGE_NAME:$CIRCLE_SHA1 -t $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 .
+    - >-
+      docker build
+      --build-arg UW_IMAGE_NAME=$DOCKER_IMAGE_NAME:$CIRCLE_BUILD_NUM
+      --build-arg UW_GIT_SHA=$CIRCLE_SHA1
+      -t $DOCKER_IMAGE_NAME:$CIRCLE_BUILD_NUM .
 
 deployment:
   publish:
     branch: master
     commands:
-      - docker tag $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 $DOCKER_IMAGE_NAME:latest
+      - docker tag $DOCKER_IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_IMAGE_NAME:latest
       - docker login -e none@none.com -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
       - docker push $DOCKER_IMAGE_NAME
       - >-
         KUBERNETES_URL=$KUBERNETES_URL_DEV
         KUBERNETES_TOKEN=$KUBERNETES_TOKEN_DEV
-        /bin/sh ./scripts/deploy.sh $DOCKER_IMAGE_NAME:$CIRCLE_SHA1
+        /bin/sh ./scripts/deploy.sh $DOCKER_IMAGE_NAME:$CIRCLE_BUILD_NUM
