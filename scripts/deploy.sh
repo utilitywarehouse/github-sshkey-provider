@@ -3,8 +3,8 @@
 set -o errexit
 set -o nounset
 
-if [ $# -ne 3 ]; then
-    echo "usage: ./scripts/deploy.sh <resource> <container> <image>"
+if [ $# -ne 1 ]; then
+    echo "usage: ./scripts/deploy.sh <image>"
     exit 1
 fi
 
@@ -18,9 +18,7 @@ if [ -z ${KUBERNETES_TOKEN:-} ]; then
     exit 1
 fi
 
-resource=$1
-container=$2
-image=$3
+image=$1
 
 payload () {
     cat <<-PAYLOAD
@@ -30,7 +28,7 @@ payload () {
                 "spec": {
                     "containers": [
                         {
-                            "name": "${container}",
+                            "name": "${1}",
                             "image": "${image}"
                         }
                     ]
@@ -41,8 +39,29 @@ payload () {
 PAYLOAD
 }
 
+echo "> patching deployment"
 curl -k -XPATCH \
-    -d "$(payload)" \
+    -d "$(payload collector)" \
     -H "Content-Type: application/strategic-merge-patch+json" \
     -H "Authorization: Bearer ${KUBERNETES_TOKEN}" \
-    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/default/${resource}"
+    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/default/deployments/github-sshkey-provider-collector" >/dev/null
+
+echo "> patching daemonset"
+curl -k -XPATCH \
+    -d "$(payload agent)" \
+    -H "Content-Type: application/strategic-merge-patch+json" \
+    -H "Authorization: Bearer ${KUBERNETES_TOKEN}" \
+    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/default/daemonsets/github-sshkey-provider-agent" >/dev/null
+
+current_daemonset_pods=$(curl -sk -XGET \
+    -H "Content-Type: application/strategic-merge-patch+json" \
+    -H "Authorization: Bearer ${KUBERNETES_TOKEN}" \
+    "${KUBERNETES_URL}/api/v1/namespaces/default/pods?labelSelector=app=github-sshkey-provider,appComponent=agent" | jq -r '.items[] | .metadata.selfLink')
+
+for p in ${current_daemonset_pods}; do
+    echo "> deleting pod ${p} of daemonset"
+    curl -sk -XDELETE \
+        -H "Content-Type: application/strategic-merge-patch+json" \
+        -H "Authorization: Bearer ${KUBERNETES_TOKEN}" \
+        "${KUBERNETES_URL}${p}" >/dev/null
+done
