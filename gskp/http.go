@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"gopkg.in/tylerb/graceful.v1"
@@ -95,5 +96,5 @@ func (h *HTTPServer) endpointStatus(w http.ResponseWriter, r *http.Request) {
 
 	simplelog.Debugf("Responding to /status request from %v", r.RemoteAddr)
 
-	fmt.Fprintf(w, HTTPResponse{"status": "ok"}.Marshal())
+	fmt.Fprintf(w, HTTPResponse{"status": "ok", "image": os.Getenv("UW_IMAGE_NAME"), "git_sha": os.Getenv("UW_GIT_SHA")}.Marshal())
 }
