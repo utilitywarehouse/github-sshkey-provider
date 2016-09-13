@@ -44,19 +44,19 @@ curl -k -XPATCH \
     -d "$(payload collector)" \
     -H "Content-Type: application/strategic-merge-patch+json" \
     -H "Authorization: Bearer ${KUBERNETES_TOKEN}" \
-    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/default/deployments/github-sshkey-provider-collector" >/dev/null
+    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/system/deployments/github-sshkey-provider-collector" >/dev/null
 
 echo "> patching daemonset"
 curl -k -XPATCH \
     -d "$(payload agent)" \
     -H "Content-Type: application/strategic-merge-patch+json" \
     -H "Authorization: Bearer ${KUBERNETES_TOKEN}" \
-    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/default/daemonsets/github-sshkey-provider-agent" >/dev/null
+    "${KUBERNETES_URL}/apis/extensions/v1beta1/namespaces/system/daemonsets/github-sshkey-provider-agent" >/dev/null
 
 current_daemonset_pods=$(curl -sk -XGET \
     -H "Content-Type: application/strategic-merge-patch+json" \
     -H "Authorization: Bearer ${KUBERNETES_TOKEN}" \
-    "${KUBERNETES_URL}/api/v1/namespaces/default/pods?labelSelector=app=github-sshkey-provider,appComponent=agent" | jq -r '.items[] | .metadata.selfLink')
+    "${KUBERNETES_URL}/api/v1/namespaces/system/pods?labelSelector=app=github-sshkey-provider,appComponent=agent" | jq -r '.items[] | .metadata.selfLink')
 
 for p in ${current_daemonset_pods}; do
     echo "> deleting pod ${p} of daemonset"
