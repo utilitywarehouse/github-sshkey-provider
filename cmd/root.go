@@ -11,7 +11,7 @@ import (
 
 const (
 	appName       = "GitHub SSH Key Provider"
-	appVersion    = "0.2"
+	appVersion    = "0.4"
 	binaryName    = "gskp"
 	confEnvPrefix = "GSKP"
 )
@@ -64,15 +64,10 @@ func initConfig() {
 }
 
 func setConfigDefaults() {
-	viper.SetDefault("redisHost", ":6379")
-	viper.SetDefault("redisPassword", "")
-	viper.SetDefault("collectorPollingInterval", 900)
 	viper.SetDefault("collectorHTTPTimeout", 10)
 	viper.SetDefault("collectorHTTPAddress", ":3000")
-	viper.SetDefault("agentRecoverInterval", 60)
-	viper.SetDefault("agentBootstrapURL", "http://localhost:3000/authorized_keys")
-	viper.SetDefault("authorizedKeysPath", "authorized_keys")
+	viper.SetDefault("collectorCacheTTL", 300)
 
-	viper.Set("redisChannel", "gskp")
-	viper.Set("redisCacheDB", "9")
+	viper.SetDefault("collectorRootURL", "http://localhost:3000/")
+	viper.SetDefault("authorizedKeysPath", "authorized_keys")
 }
