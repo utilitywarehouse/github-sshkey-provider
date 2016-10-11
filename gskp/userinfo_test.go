@@ -1,6 +1,7 @@
 package gskp
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -11,8 +12,8 @@ func init() {
 	simplelog.DebugEnabled = true
 }
 
-func TestUserInfoList_Marshal(t *testing.T) {
-	ui := UserInfoList{
+func TestUserInfo_Marshal(t *testing.T) {
+	ui := []UserInfo{
 		UserInfo{
 			Login: "user0",
 			ID:    999999,
@@ -32,18 +33,18 @@ func TestUserInfoList_Marshal(t *testing.T) {
 		`"name":"User One","keys":"ssh-dsa this_will_be_a_really_really_really_long_ssh_key_string_` +
 		`for_user0"}]`
 
-	jsonText, err := ui.Marshal()
+	jsonText, err := json.Marshal(ui)
 	if err != nil {
-		t.Fatalf("UserInfoList.Marshal returned error: %v", err)
+		t.Fatalf("[]UserInfo marshal returned error: %v", err)
 	}
 
-	if jsonText != jsonTextExpected {
-		t.Errorf("UserInfoList.Marshal returned unexpected results: %s", jsonText)
+	if string(jsonText) != jsonTextExpected {
+		t.Errorf("[]UserInfo marshal returned unexpected results: %s", jsonText)
 	}
 }
 
-func TestUserInfoList_Unmarshal(t *testing.T) {
-	uiExpected := UserInfoList{
+func TestUserInfo_Unmarshal(t *testing.T) {
+	uiExpected := []UserInfo{
 		UserInfo{
 			Login: "user0",
 			ID:    999999,
@@ -63,23 +64,23 @@ func TestUserInfoList_Unmarshal(t *testing.T) {
 		`"name":"User One","keys":"ssh-dsa this_will_be_a_really_really_really_long_ssh_key_string_` +
 		`for_user0"}]`
 
-	ui := UserInfoList{}
-	err := ui.Unmarshal(jsonText)
+	ui := []UserInfo{}
+	err := json.Unmarshal([]byte(jsonText), &ui)
 	if err != nil {
-		t.Fatalf("UserInfoList.Unmarshal returned error: %v", err)
+		t.Fatalf("[]UserInfo unmarshal returned error: %v", err)
 	}
 
 	if !reflect.DeepEqual(ui, uiExpected) {
-		t.Errorf("UserInfoList.Unmarshal returned unexpected results: %v", ui)
+		t.Errorf("[]UserInfo unmarshal returned unexpected results: %v", ui)
 	}
 }
 
-func TestUserInfoList_Unmarshal_error(t *testing.T) {
+func TestUserInfo_Unmarshal_error(t *testing.T) {
 	jsonText := `["login":"user0","id":999999,"name":"User Zero","keys":""]`
 
-	ui := UserInfoList{}
-	err := ui.Unmarshal(jsonText)
+	ui := []UserInfo{}
+	err := json.Unmarshal([]byte(jsonText), &ui)
 	if err == nil {
-		t.Errorf("UserInfoList.Unmarshal should have returned an error")
+		t.Errorf("[]UserInfo unmarshal should have returned an error")
 	}
 }

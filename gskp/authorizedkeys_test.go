@@ -11,7 +11,7 @@ func init() {
 }
 
 func TestAuthorizedKeys_GenerateAuthorizedKeysFile(t *testing.T) {
-	ui := UserInfoList{
+	ui := []UserInfo{
 		UserInfo{
 			Login: "user00",
 			ID:    999998,

@@ -101,7 +101,7 @@ func collectAndPublishKeys(teamID int) {
 
 	teamMembersSerialised, err := teamMembers.Marshal()
 	if err != nil {
-		simplelog.Infof("Failed to serialise the UserInfoList. Will not use the cache but will try to publish anyway.")
+		simplelog.Infof("Failed to serialise the UserInfo list. Will not use the cache but will try to publish anyway.")
 	} else {
 		if err := simplecache.NewRedis(
 			viper.GetString("redisHost"),
@@ -145,7 +145,7 @@ func setupAuthorizedKeysHTTPEndpoint(httpServer *gskp.HTTPServer, teamID int) {
 			fmt.Fprintf(w, gskp.HTTPResponse{"error": "unexpected error occurred"}.Marshal())
 		}
 
-		teamMembers := gskp.UserInfoList{}
+		teamMembers := []gskp.UserInfo{}
 		teamMembers.Unmarshal(value)
 
 		authorizedKeysSnippet, err := gskp.AuthorizedKeys.GenerateSnippet(teamMembers)

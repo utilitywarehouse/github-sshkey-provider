@@ -43,7 +43,7 @@ type authorizedKeys struct{}
 
 // GenerateSnippet returns a string containing an snippet compatible with
 // OpenSSH authorized_keys format, based on a list of UserInfo structs.
-func (authorizedKeys) GenerateSnippet(ui UserInfoList) (string, error) {
+func (authorizedKeys) GenerateSnippet(ui []UserInfo) (string, error) {
 	t := template.New("authorized_keys")
 	t, err := t.Parse(snippetTemplate)
 	if err != nil {
