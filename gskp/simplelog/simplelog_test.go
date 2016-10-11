@@ -3,7 +3,8 @@ package simplelog
 import "errors"
 
 func ExampleInfof() {
-	MockClock()
+	MockClock(true)
+	defer MockClock(false)
 	Infof("this is an info log message")
 	// Output: {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"info","message":"this is an info log message"}
 }
@@ -14,7 +15,8 @@ func ExampleInfof_arguments() {
 }
 
 func ExampleDebugf() {
-	MockClock()
+	MockClock(true)
+	defer MockClock(false)
 	DebugEnabled = true
 	Debugf("this is a debug log message")
 	DebugEnabled = false
@@ -22,7 +24,8 @@ func ExampleDebugf() {
 }
 
 func ExampleDebugf_arguments() {
-	MockClock()
+	MockClock(true)
+	defer MockClock(false)
 	DebugEnabled = true
 	Debugf("this is a debug log message with a numeric argument: %d", 1234567890)
 	DebugEnabled = false
@@ -35,7 +38,8 @@ func ExampleDebugf_suppressed() {
 }
 
 func ExampleErrorf() {
-	MockClock()
+	MockClock(true)
+	defer MockClock(false)
 	Errorf("this is an error log message")
 	// Output: {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"error","message":"this is an error log message"}
 }
