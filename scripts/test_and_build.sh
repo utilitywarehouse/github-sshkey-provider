@@ -3,6 +3,8 @@
 set -o errexit
 set -o nounset
 
+apk add --no-cache curl git
+
 curl -sS https://glide.sh/get | sh
 
 glide i
