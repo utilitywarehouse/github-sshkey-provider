@@ -1,0 +1,230 @@
+package gskp
+
+import (
+	"encoding/json"
+	"net/http"
+	"os"
+	"sync"
+	"time"
+
+	"gopkg.in/tylerb/graceful.v1"
+
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
+)
+
+const (
+	updateManagerInterval   = time.Second
+	longpollTimeoutDuration = 10 * time.Minute
+)
+
+var (
+	serverInvalidParamTeam = HTTPResponse{"error": "invalid team value"}
+	serverInvalidParamInit = HTTPResponse{"error": "invalid init value"}
+	serverInvalidMethod    = HTTPResponse{"error": "invalid method"}
+	serverUnexpectedError  = HTTPResponse{"error": "unexpected error occurred"}
+	serverLongpollTimeout  = HTTPResponse{"error": "long polling has timed out"}
+)
+
+// HTTPResponse can be used to construct a response for an endpoint. It
+// provides the Marshal function to serialise it.
+type HTTPResponse map[string]interface{}
+
+// Marshal will return the JSON encoded string of the HTTPResponse.
+func (r HTTPResponse) Marshal() []byte {
+	jsonText, _ := json.Marshal(r)
+
+	return jsonText
+}
+
+// Server provides a proper but simple HTTP server that can handle graceful
+// shutdowns and long polling requests.
+type Server struct {
+	cache                    *KeyCache
+	mux                      *http.ServeMux
+	server                   *graceful.Server
+	updateManagerIsActive    bool
+	updateManagerStopped     chan bool
+	updateManagerQueue       map[string][]chan bool
+	updateManagerQueueMuxtex *sync.Mutex
+}
+
+// NewServer returns an instantiated Server which will use the provided
+// KeyCache.
+func NewServer(cache *KeyCache) (*Server, error) {
+	mux := http.NewServeMux()
+
+	ret := &Server{
+		cache:                    cache,
+		mux:                      mux,
+		updateManagerStopped:     make(chan bool),
+		updateManagerQueue:       map[string][]chan bool{},
+		updateManagerQueueMuxtex: &sync.Mutex{},
+	}
+
+	mux.HandleFunc("/status", ret.statusHandler)
+	mux.HandleFunc("/keys", ret.keysHandler)
+
+	return ret, nil
+}
+
+// Start will start listening for incoming connections.
+func (s *Server) Start(listenAddress string, timeout time.Duration) error {
+	s.server = &graceful.Server{
+		Timeout: timeout,
+
+		Server: &http.Server{
+			Addr:    listenAddress,
+			Handler: s.mux,
+		},
+	}
+
+	simplelog.Infof("HTTP server listening on %s", listenAddress)
+
+	s.updateManagerIsActive = true
+
+	go s.updateManager()
+	simplelog.Infof("update manager started")
+
+	return s.server.ListenAndServe()
+}
+
+// Stop is a blocking operation that waits for the Server to close all
+// connections and shutdown before returning.
+func (s *Server) Stop(timeout time.Duration) {
+	simplelog.Infof("HTTP server shutdown started with a timeout of %.0f seconds", timeout.Seconds())
+
+	s.server.Stop(timeout)
+	<-s.server.StopChan()
+	simplelog.Infof("HTTP server shutdown complete")
+
+	s.updateManagerIsActive = false
+	<-s.updateManagerStopped
+	simplelog.Infof("update manager stopped")
+}
+
+func (s *Server) updateManager() {
+	for s.updateManagerIsActive {
+		select {
+		case team := <-s.cache.Updates:
+			simplelog.Infof("received update message for team '%s', notifying clients", team)
+
+			_, exists := s.updateManagerQueue[team]
+			if exists {
+				for _, p := range s.updateManagerQueue[team] {
+					select {
+					case p <- true:
+					default:
+					}
+				}
+
+				simplelog.Debugf("notified %d clients", len(s.updateManagerQueue[team]))
+
+				s.updateManagerQueue[team] = []chan bool{}
+			} else {
+				simplelog.Debugf("no clients are polling for team '%s'", team)
+			}
+		case <-time.After(updateManagerInterval):
+		}
+	}
+
+	s.updateManagerStopped <- true
+}
+
+func (s *Server) updateManagerGetNotifier(teamName string) chan bool {
+	s.updateManagerQueueMuxtex.Lock()
+	defer s.updateManagerQueueMuxtex.Unlock()
+
+	notifier := make(chan bool)
+
+	s.updateManagerQueue[teamName] = append(s.updateManagerQueue[teamName], notifier)
+
+	return notifier
+}
+
+func (s *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		s.respond(w, http.StatusMethodNotAllowed, serverInvalidMethod)
+		return
+	}
+
+	s.respond(
+		w,
+		http.StatusOK,
+		HTTPResponse{
+			"status":  "ok",
+			"image":   os.Getenv("UW_IMAGE_NAME"),
+			"git_sha": os.Getenv("UW_GIT_SHA"),
+		},
+	)
+}
+
+func (s *Server) keysHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		s.respond(w, http.StatusMethodNotAllowed, serverInvalidMethod)
+		return
+	}
+
+	team := r.URL.Query().Get("team")
+	init := r.URL.Query().Get("init")
+
+	if team == "" {
+		s.respond(w, http.StatusBadRequest, serverInvalidParamTeam)
+		return
+	}
+
+	if init != "" && init != "true" && init != "false" {
+		s.respond(w, http.StatusBadRequest, serverInvalidParamInit)
+		return
+	}
+
+	if init == "true" {
+		if err := s.sendData(w, team); err != nil {
+			simplelog.Errorf("error occurred when trying to get keys from cache: %v", err)
+			s.respond(w, http.StatusInternalServerError, serverUnexpectedError)
+			return
+		}
+
+		return
+	}
+
+	timeout := time.NewTimer(longpollTimeoutDuration)
+	update := s.updateManagerGetNotifier(team)
+
+	simplelog.Debugf("new longpoll connection for team '%s' from '%s'", team, r.RemoteAddr)
+
+	select {
+	case <-update:
+		timeout.Stop()
+
+		if err := s.sendData(w, team); err != nil {
+			simplelog.Errorf("error occurred when trying to get keys from cache: %v", err)
+			s.respond(w, http.StatusInternalServerError, serverUnexpectedError)
+			return
+		}
+	case <-timeout.C:
+		simplelog.Debugf("timing out longpoll connection for team '%s' from '%s'", team, r.RemoteAddr)
+		s.respond(w, http.StatusOK, serverLongpollTimeout)
+		return
+	}
+}
+
+func (s *Server) respond(w http.ResponseWriter, code int, response HTTPResponse) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(response.Marshal())
+}
+
+func (s *Server) sendData(w http.ResponseWriter, teamName string) error {
+	data, err := s.cache.Get(teamName)
+	if err != nil {
+		return err
+	}
+
+	simplelog.Debugf("responding to client with full data for team '%s'", teamName)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
+	return nil
+}
