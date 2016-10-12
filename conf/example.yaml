@@ -24,16 +24,21 @@ githubAccessToken: token_to_use_with_the_github_api
 # server will be listening
 # collectorHTTPAddress: :3000
 
-# collectorHTTPTimeout sets a timeout (in seconds) for the HTTP server the
-# collector uses
+# collectorHTTPTimeout sets a shutdown timeout (in seconds) for the HTTP server
+# the collector uses. It will wait this long for outstanding connections to
+# close, before terminating them.
 # collectorHTTPTimeout: 10
 
 # collectorCacheTTL sets the TTL for cached keys in the collector
 # collectorCacheTTL: 300
 
-# collectorRootURL determines the base URL of the collector, which is used by
+# collectorBaseURL determines the base URL of the collector, which is used by
 # the agent
-# collectorRootURL: http://localhost:3000/
+# collectorBaseURL: http://localhost:3000/
+
+# agentGithubTeam specifies which GitHub team will be used to compile the list
+# of authorized_keys for the agent.
+# agentGithubTeam:
 
 # Specifies the path to the authorized_keys file that the agent is managing.
 # authorizedKeysPath: authorized_keys

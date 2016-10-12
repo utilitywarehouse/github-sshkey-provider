@@ -68,6 +68,6 @@ func setConfigDefaults() {
 	viper.SetDefault("collectorHTTPAddress", ":3000")
 	viper.SetDefault("collectorCacheTTL", 300)
 
-	viper.SetDefault("collectorRootURL", "http://localhost:3000/")
+	viper.SetDefault("collectorBaseURL", "http://localhost:3000/")
 	viper.SetDefault("authorizedKeysPath", "authorized_keys")
 }

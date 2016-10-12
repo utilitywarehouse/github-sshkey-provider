@@ -22,6 +22,13 @@ var collectorCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		simplelog.Infof("starting up")
 
+		for _, cv := range []string{"organizationName", "githubAccessToken", "collectorCacheTTL", "collectorHTTPTimeout", "collectorHTTPAddress"} {
+			if viper.GetString(cv) == "" {
+				simplelog.Errorf("please specify a config value for %s", cv)
+				os.Exit(-1)
+			}
+		}
+
 		cache := gskp.NewKeyCache(viper.GetString("organizationName"), viper.GetString("githubAccessToken"), time.Duration(viper.GetInt("collectorCacheTTL"))*time.Second)
 
 		server, err := gskp.NewServer(cache)
@@ -37,9 +44,8 @@ var collectorCmd = &cobra.Command{
 		signal.Notify(sigChannel, os.Interrupt)
 		go func() {
 			<-sigChannel
-			simplelog.Infof("shutdown started, waiting for goroutines to return")
+			simplelog.Infof("received interrupt: shutdown started, waiting for server to stop")
 			server.Stop(time.Duration(viper.GetInt("collectorHTTPTimeout")) * time.Second)
-			simplelog.Infof("shutdown complete, exiting now")
 			shutdownComplete <- true
 		}()
 
@@ -49,5 +55,6 @@ var collectorCmd = &cobra.Command{
 		}
 
 		<-shutdownComplete
+		simplelog.Infof("shutdown complete, exiting now")
 	},
 }
