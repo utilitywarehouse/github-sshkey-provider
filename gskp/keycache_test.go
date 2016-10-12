@@ -27,7 +27,7 @@ func TestKeyCache_Get_new(t *testing.T) {
 	testKeyCache = NewKeyCache("none", "", 5*time.Second)
 	testKeyCache.collector = testKeyCollector
 
-	dataExpected := []byte(`[{"login":"user","id":999999,"name":"User Name","keys":"ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string"}]`)
+	dataExpected := []byte(`{"keys":[{"login":"user","id":999999,"name":"User Name","keys":"ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string"}]}`)
 
 	data, err := testKeyCache.Get("Owners")
 	if err != nil {
@@ -67,6 +67,7 @@ func ExampleKeyCache_Get_twice() {
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"Fetching a list of users in team with ID 888888"}
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"Fetching keys for user 'user'"}
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"GitHub API Limits: 0 / 0 until 0001-01-01 00:00:00 +0000 UTC"}
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"sent an update for team 'Owners' to the channel"}
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"found recent keys in the cache"}
 }
 
@@ -108,5 +109,6 @@ func ExampleKeyCache_Get_late() {
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"Fetching a list of users in team with ID 888888"}
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"Fetching keys for user 'user'"}
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"GitHub API Limits: 0 / 0 until 0001-01-01 00:00:00 +0000 UTC"}
+	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"sent an update for team 'Owners' to the channel"}
 	// {"timestamp":"2016-10-01T18:20:10.000000123+01:00","level":"debug","message":"keys are already up to date, won't update"}
 }
