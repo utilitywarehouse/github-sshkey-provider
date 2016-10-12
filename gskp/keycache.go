@@ -16,6 +16,7 @@ type KeyCache struct {
 	mutex        *sync.Mutex
 	organisation string
 	TTL          time.Duration
+	Updates      chan string
 }
 
 type cacheEntry struct {
@@ -33,6 +34,7 @@ func NewKeyCache(githubOrg string, githubAccessToken string, ttl time.Duration) 
 		mutex:        &sync.Mutex{},
 		organisation: githubOrg,
 		TTL:          ttl,
+		Updates:      make(chan string, 5),
 	}
 }
 
@@ -69,18 +71,20 @@ func (c *KeyCache) updateSnippet(teamName string) error {
 		return nil
 	}
 
-	id, err := c.collector.GetTeamID(c.organisation, teamName)
+	if keys.TeamID == 0 {
+		id, err := c.collector.GetTeamID(c.organisation, teamName)
+		if err != nil {
+			return err
+		}
+		keys.TeamID = id
+	}
+
+	data, err := c.collector.GetTeamMemberInfo(keys.TeamID)
 	if err != nil {
 		return err
 	}
-	keys.TeamID = id
 
-	data, err := c.collector.GetTeamMemberInfo(id)
-	if err != nil {
-		return err
-	}
-
-	jsonText, err := json.Marshal(data)
+	jsonText, err := json.Marshal(map[string][]UserInfo{"keys": data})
 	if err != nil {
 		return err
 	}
@@ -89,6 +93,13 @@ func (c *KeyCache) updateSnippet(teamName string) error {
 	keys.UpdatedAt = time.Now()
 
 	c.cache[teamName] = keys
+
+	select {
+	case c.Updates <- teamName:
+		simplelog.Debugf("sent an update for team '%s' to the channel", teamName)
+	default:
+		simplelog.Debugf("could not send an update to the channel")
+	}
 
 	return nil
 }

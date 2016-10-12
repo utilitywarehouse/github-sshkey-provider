@@ -30,6 +30,8 @@ var collectorCmd = &cobra.Command{
 			os.Exit(-1)
 		}
 
+		shutdownComplete := make(chan bool, 1)
+
 		// handle interrupt
 		sigChannel := make(chan os.Signal, 1)
 		signal.Notify(sigChannel, os.Interrupt)
@@ -38,12 +40,14 @@ var collectorCmd = &cobra.Command{
 			simplelog.Infof("shutdown started, waiting for goroutines to return")
 			server.Stop(time.Duration(viper.GetInt("collectorHTTPTimeout")) * time.Second)
 			simplelog.Infof("shutdown complete, exiting now")
-			os.Exit(0)
+			shutdownComplete <- true
 		}()
 
 		if err := server.Start(viper.GetString("collectorHTTPAddress"), time.Duration(viper.GetInt("collectorHTTPTimeout"))*time.Second); err != nil {
 			simplelog.Errorf("failed to start HTTP server, exiting: %v", err)
 			os.Exit(-1)
 		}
+
+		<-shutdownComplete
 	},
 }
