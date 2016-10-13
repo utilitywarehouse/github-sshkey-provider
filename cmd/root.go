@@ -69,5 +69,6 @@ func setConfigDefaults() {
 	viper.SetDefault("collectorCacheTTL", 300)
 
 	viper.SetDefault("collectorBaseURL", "http://localhost:3000/")
+	viper.SetDefault("agentLongpollTimeoutSeconds", 0)
 	viper.SetDefault("authorizedKeysPath", "authorized_keys")
 }

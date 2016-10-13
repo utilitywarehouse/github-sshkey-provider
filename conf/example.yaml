@@ -40,5 +40,10 @@ githubAccessToken: token_to_use_with_the_github_api
 # of authorized_keys for the agent.
 # agentGithubTeam:
 
+# agentLongpollTimeoutSeconds is used to specify the timeout (in seconds) for
+# the longpoll requests the agent makes to the collector. Setting it to 0 means
+# that it will use the collector's default timeout (2 minutes).
+# agentLongpollTimeoutSeconds: 0
+
 # Specifies the path to the authorized_keys file that the agent is managing.
 # authorizedKeysPath: authorized_keys
