@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -13,16 +14,18 @@ import (
 )
 
 const (
-	updateManagerInterval   = time.Second
-	longpollTimeoutDuration = 10 * time.Minute
+	updateManagerInterval = time.Second
+
+	defaultLongpollTimeoutDuration = 2 * time.Minute
 )
 
 var (
-	serverInvalidParamTeam = HTTPResponse{"error": "invalid team value"}
-	serverInvalidParamInit = HTTPResponse{"error": "invalid init value"}
-	serverInvalidMethod    = HTTPResponse{"error": "invalid method"}
-	serverUnexpectedError  = HTTPResponse{"error": "unexpected error occurred"}
-	serverLongpollTimeout  = HTTPResponse{"error": "long polling has timed out"}
+	serverInvalidParamTeam    = HTTPResponse{"error": "invalid team value"}
+	serverInvalidParamInit    = HTTPResponse{"error": "invalid init value"}
+	serverInvalidParamTimeout = HTTPResponse{"error": "invalid timeout value"}
+	serverInvalidMethod       = HTTPResponse{"error": "invalid method"}
+	serverUnexpectedError     = HTTPResponse{"error": "unexpected error occurred"}
+	serverLongpollTimeout     = HTTPResponse{"error": "long polling has timed out"}
 )
 
 // HTTPResponse can be used to construct a response for an endpoint. It
@@ -166,6 +169,7 @@ func (s *Server) keysHandler(w http.ResponseWriter, r *http.Request) {
 
 	team := r.URL.Query().Get("team")
 	init := r.URL.Query().Get("init")
+	timeout := r.URL.Query().Get("timeout")
 
 	if team == "" {
 		s.respond(w, http.StatusBadRequest, serverInvalidParamTeam)
@@ -175,6 +179,16 @@ func (s *Server) keysHandler(w http.ResponseWriter, r *http.Request) {
 	if init != "" && init != "true" && init != "false" {
 		s.respond(w, http.StatusBadRequest, serverInvalidParamInit)
 		return
+	}
+
+	timeoutDuration := defaultLongpollTimeoutDuration
+	if timeout != "" {
+		t, err := strconv.ParseInt(timeout, 10, 64)
+		if err != nil {
+			s.respond(w, http.StatusBadRequest, serverInvalidParamTimeout)
+			return
+		}
+		timeoutDuration = time.Duration(t) * time.Second
 	}
 
 	if init == "true" {
@@ -187,21 +201,21 @@ func (s *Server) keysHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timeout := time.NewTimer(longpollTimeoutDuration)
+	timeoutTimer := time.NewTimer(timeoutDuration)
 	update := s.updateManagerGetNotifier(team)
 
 	simplelog.Debugf("new longpoll connection for team '%s' from '%s'", team, r.RemoteAddr)
 
 	select {
 	case <-update:
-		timeout.Stop()
+		timeoutTimer.Stop()
 
 		if err := s.sendData(w, team); err != nil {
 			simplelog.Errorf("error occurred when trying to get keys from cache: %v", err)
 			s.respond(w, http.StatusInternalServerError, serverUnexpectedError)
 			return
 		}
-	case <-timeout.C:
+	case <-timeoutTimer.C:
 		simplelog.Debugf("timing out longpoll connection for team '%s' from '%s'", team, r.RemoteAddr)
 		s.respond(w, http.StatusOK, serverLongpollTimeout)
 		return
