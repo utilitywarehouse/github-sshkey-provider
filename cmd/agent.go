@@ -43,11 +43,15 @@ var agentCmd = &cobra.Command{
 			simplelog.Errorf("could not create a client instance: %v", err)
 		}
 
-		data, err := client.GetKeys(viper.GetString("agentGithubTeam"))
-		if err != nil {
-			simplelog.Errorf("error while trying to bootstrap with initial keys, ignoring: %v", err)
-		} else {
-			updateAuthorizedKeys(data)
+		for {
+			data, err := client.GetKeys(viper.GetString("agentGithubTeam"))
+			if err != nil {
+				simplelog.Errorf("error while trying to bootstrap with initial keys, will try again in a minute: %v", err)
+				time.Sleep(time.Minute)
+			} else {
+				updateAuthorizedKeys(data)
+				break
+			}
 		}
 
 		simplelog.Infof("starting poll for ssh key updates")
