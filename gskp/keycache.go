@@ -1,6 +1,7 @@
 package gskp
 
 import (
+	"bytes"
 	"encoding/json"
 	"sync"
 	"time"
@@ -84,6 +85,7 @@ func (c *KeyCache) updateSnippet(teamName string) error {
 		return err
 	}
 
+	previousKeysJSON := keys.JSON
 	jsonText, err := json.Marshal(map[string][]UserInfo{"keys": data})
 	if err != nil {
 		return err
@@ -94,11 +96,15 @@ func (c *KeyCache) updateSnippet(teamName string) error {
 
 	c.cache[teamName] = keys
 
-	select {
-	case c.Updates <- teamName:
-		simplelog.Debugf("sent an update for team '%s' to the channel", teamName)
-	default:
-		simplelog.Debugf("could not send an update to the channel")
+	if !bytes.Equal(previousKeysJSON, keys.JSON) {
+		select {
+		case c.Updates <- teamName:
+			simplelog.Debugf("sent an update for team '%s' to the channel", teamName)
+		default:
+			simplelog.Debugf("could not send an update to the channel")
+		}
+	} else {
+		simplelog.Debugf("keys have not changed, will not send an update")
 	}
 
 	return nil

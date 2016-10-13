@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,8 +47,7 @@ type Server struct {
 	cache                    *KeyCache
 	mux                      *http.ServeMux
 	server                   *graceful.Server
-	updateManagerIsActive    bool
-	updateManagerStopped     chan bool
+	updateManagerStop        chan bool
 	updateManagerQueue       map[string]map[string]chan bool
 	updateManagerQueueMuxtex *sync.Mutex
 }
@@ -60,7 +60,7 @@ func NewServer(cache *KeyCache) (*Server, error) {
 	ret := &Server{
 		cache:                    cache,
 		mux:                      mux,
-		updateManagerStopped:     make(chan bool),
+		updateManagerStop:        make(chan bool),
 		updateManagerQueue:       map[string]map[string]chan bool{},
 		updateManagerQueueMuxtex: &sync.Mutex{},
 	}
@@ -84,8 +84,6 @@ func (s *Server) Start(listenAddress string, timeout time.Duration) error {
 
 	simplelog.Infof("HTTP server listening on %s", listenAddress)
 
-	s.updateManagerIsActive = true
-
 	go s.updateManager()
 	simplelog.Infof("update manager started")
 
@@ -101,13 +99,14 @@ func (s *Server) Stop(timeout time.Duration) {
 	<-s.server.StopChan()
 	simplelog.Infof("HTTP server shutdown complete")
 
-	s.updateManagerIsActive = false
-	<-s.updateManagerStopped
+	s.updateManagerStop <- true
 	simplelog.Infof("update manager stopped")
 }
 
 func (s *Server) updateManager() {
-	for s.updateManagerIsActive {
+	cacheRefresh := time.NewTicker(s.cache.TTL)
+
+	for {
 		select {
 		case team := <-s.cache.Updates:
 			simplelog.Infof("received update message for team '%s', notifying clients", team)
@@ -127,11 +126,27 @@ func (s *Server) updateManager() {
 				simplelog.Debugf("no clients are polling for team '%s'", team)
 			}
 			s.updateManagerQueueMuxtex.Unlock()
-		case <-time.After(updateManagerInterval):
+		case <-cacheRefresh.C:
+			s.updateManagerQueueMuxtex.Lock()
+			teamsListening := []string{}
+			for t := range s.updateManagerQueue {
+				if len(s.updateManagerQueue[t]) > 0 {
+					teamsListening = append(teamsListening, t)
+				}
+			}
+			s.updateManagerQueueMuxtex.Unlock()
+
+			if len(teamsListening) > 0 {
+				simplelog.Infof("refreshing entries in the cache for teams: %s", strings.Join(teamsListening, ", "))
+				for _, t := range teamsListening {
+					s.cache.Get(t)
+				}
+			}
+		case <-s.updateManagerStop:
+			cacheRefresh.Stop()
+			return
 		}
 	}
-
-	s.updateManagerStopped <- true
 }
 
 func (s *Server) updateManagerGetNotifier(teamName string) (string, chan bool) {
