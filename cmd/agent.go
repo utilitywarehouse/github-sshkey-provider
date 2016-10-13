@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -23,88 +20,65 @@ var agentCmd = &cobra.Command{
 	Short: "starts the agent",
 	Long:  "Will listen for notifications from the collector and adjust the authorized_keys file.",
 	Run: func(cmd *cobra.Command, args []string) {
-		simplelog.Infof("Starting up [agentRecoverInterval=%d]", viper.GetInt("agentRecoverInterval"))
+		simplelog.Infof("starting up")
 
-		rt := gskp.NewRedisTransporter(
-			viper.GetString("redisHost"),
-			viper.GetString("redisPassword"),
-			viper.GetString("redisChannel"),
-		)
-
-		isActive := true
-		timer := time.NewTimer(time.Nanosecond)
+		for _, cv := range []string{"agentGithubTeam", "collectorBaseURL", "authorizedKeysPath"} {
+			if viper.GetString(cv) == "" {
+				simplelog.Errorf("please specify a config value for %s", cv)
+				os.Exit(-1)
+			}
+		}
 
 		// handle interrupt
 		sigChannel := make(chan os.Signal, 1)
 		signal.Notify(sigChannel, os.Interrupt)
 		go func() {
 			<-sigChannel
-			simplelog.Infof("Shutdown started, waiting for processes to return")
-			isActive = false
-			timer.Reset(time.Nanosecond)
-			rt.StopListening()
+			simplelog.Infof("received interrupt: shutting down")
+			os.Exit(0)
 		}()
 
-		getBootstrapSnippet()
-
-		<-timer.C
-		for isActive {
-			if err := rt.Listen(func(message string) error {
-				updateAuthorizedKeys(message)
-
-				return nil
-			}); err != nil {
-				simplelog.Infof("Listen returned error: %v", err)
-			}
-
-			if isActive {
-				simplelog.Infof("Waiting %d seconds before trying to establish a connection again",
-					viper.GetInt("agentRecoverInterval"))
-
-				timer.Reset(time.Duration(viper.GetInt("agentRecoverInterval")) * time.Second)
-			}
-
-			<-timer.C
+		client, err := gskp.NewClient(viper.GetString("collectorBaseURL"), viper.GetInt64("agentLongpollTimeoutSeconds"))
+		if err != nil {
+			simplelog.Errorf("could not create a client instance: %v", err)
 		}
 
-		simplelog.Infof("Shutdown complete, exiting now")
+		data, err := client.GetKeys(viper.GetString("agentGithubTeam"))
+		if err != nil {
+			simplelog.Errorf("error while trying to bootstrap with initial keys, ignoring: %v", err)
+		} else {
+			updateAuthorizedKeys(data)
+		}
+
+		simplelog.Infof("starting poll for ssh key updates")
+		for {
+			simplelog.Debugf("starting longpoll request")
+			data, err := client.PollForKeys(viper.GetString("agentGithubTeam"))
+			if err == gskp.ErrClientPollTimeout {
+				simplelog.Debugf("longpoll timeout, will re-start")
+				continue
+			} else if err != nil {
+				simplelog.Errorf("error while polling for key changes, ignoring and retrying in 15 seconds: %v", err)
+				time.Sleep(15 * time.Second)
+			} else {
+				updateAuthorizedKeys(data)
+			}
+		}
 	},
 }
 
-func getBootstrapSnippet() {
-	simplelog.Infof("Trying to get an initial version of the snippet from %s", viper.GetString("agentBootstrapURL"))
+func updateAuthorizedKeys(data []gskp.UserInfo) {
+	simplelog.Infof("updating %s", viper.GetString("authorizedKeysPath"))
 
-	resp, err := http.Get(viper.GetString("agentBootstrapURL"))
+	snippet, err := gskp.AuthorizedKeys.GenerateSnippet(data)
 	if err != nil {
-		simplelog.Infof("Could not reach bootstrap URL, ignoring error: %v", err)
-		return
+		simplelog.Errorf("could not generate authorized_keys snippet: %v", err)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-	if err != nil {
-		simplelog.Infof("Error occurred while trying to read the response from the boostrap URL, ignoring: %v", err)
-		return
-	}
-
-	data := gskp.HTTPResponse{}
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		simplelog.Infof("Error occurred while trying to decode the response from the boostrap URL, ignoring: %v", err)
-		return
-	}
-
-	updateAuthorizedKeys(data["authorized_keys"].(string))
-}
-
-func updateAuthorizedKeys(snippet string) {
-	simplelog.Infof("Updating %s", viper.GetString("authorizedKeysPath"))
-
-	err := gskp.AuthorizedKeys.Update(viper.GetString("authorizedKeysPath"), snippet)
+	err = gskp.AuthorizedKeys.Update(viper.GetString("authorizedKeysPath"), snippet)
 	if err == gskp.ErrAuthorizedKeysNotChanged {
-		simplelog.Infof("The authorized_keys snippet makes no changes to the file, ignoring")
+		simplelog.Infof("the authorized_keys snippet makes no changes to the file, ignoring")
 	} else if err != nil {
-		simplelog.Infof("Error occurred while trying to update '%s': %v",
-			viper.GetString("authorizedKeysPath"), err)
+		simplelog.Errorf("error occurred while trying to update '%s': %v", viper.GetString("authorizedKeysPath"), err)
 	}
 }

@@ -1,9 +1,5 @@
 package: github.com/utilitywarehouse/github-sshkey-provider
 import:
-- package: github.com/garyburd/redigo
-  version: ~1.0.0
-  subpackages:
-  - redis
 - package: github.com/google/go-github
   subpackages:
   - github
@@ -11,4 +7,5 @@ import:
 - package: github.com/spf13/viper
 - package: golang.org/x/oauth2
 - package: gopkg.in/tylerb/graceful.v1
-  version: ~1.2.11
+  version: v1.2.13
+- package: github.com/rs/xid

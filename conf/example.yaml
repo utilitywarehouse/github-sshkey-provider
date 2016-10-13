@@ -12,43 +12,38 @@
 # of the environment variables is prefixed by GSKP_, eg:
 # githubAccessToken is controlled by GSKP_GITHUBACCESSTOKEN
 
-# The values below are used by the collector to determine which GitHub team
-# to pull the SSH keys from.
+# organizationName is used by the collector to determine which GitHub
+# organisation to get teams and users from
 organizationName: my_github_organization_name
-teamName: team_whose_members_get_ssh_access
 
 # This is an access token to be used when talking to the GitHub API. It needs
 # to have the `read:org` permission.
 githubAccessToken: token_to_use_with_the_github_api
 
-# By default, it uses ":6379" to connect to redis (localhost), you can change
-# this value by changing the value below.
-# redisHost: :6379
-
-# It also assumes the connection to redis is not authenticated. If you need to
-# use a password to authenticate with redis, please set it below.
-# redisPassword: password
-
-# collectorPollingInterval determines the number of seconds between collection
-# cycles (ie. how often the collector will poll the GitHub API)
-# collectorPollingInterval: 900
-
 # collectorHTTPAddress set the address on which the collector's internal HTTP
 # server will be listening
 # collectorHTTPAddress: :3000
 
-# collectorHTTPTimeout sets a timeout (in seconds) for the HTTP server the
-# collector uses
+# collectorHTTPTimeout sets a shutdown timeout (in seconds) for the HTTP server
+# the collector uses. It will wait this long for outstanding connections to
+# close, before terminating them.
 # collectorHTTPTimeout: 10
 
-# agentRecoverInterval determines the number of seconds that the agent will
-# wait before trying to reconnect to the transport mechanism after an error
-# has caused the connection to drop.
-# agentRecoverInterval: 60
+# collectorCacheTTL sets the TTL for cached keys in the collector
+# collectorCacheTTL: 300
 
-# agentBootstrapURL determines the URL that the agent can contact to get the
-# initial version of the authorized_keys snippet produced by the collector.
-# agentBootstrapURL: http://localhost:3000/authorized_keys
+# collectorBaseURL determines the base URL of the collector, which is used by
+# the agent
+# collectorBaseURL: http://localhost:3000/
+
+# agentGithubTeam specifies which GitHub team will be used to compile the list
+# of authorized_keys for the agent.
+# agentGithubTeam:
+
+# agentLongpollTimeoutSeconds is used to specify the timeout (in seconds) for
+# the longpoll requests the agent makes to the collector. Setting it to 0 means
+# that it will use the collector's default timeout (2 minutes).
+# agentLongpollTimeoutSeconds: 0
 
 # Specifies the path to the authorized_keys file that the agent is managing.
 # authorizedKeysPath: authorized_keys

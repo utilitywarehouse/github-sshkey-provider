@@ -15,8 +15,12 @@ var (
 
 // MockClock sets the timestamp to a fixed value. It is meant to be used in
 // tests.
-func MockClock() {
-	clock = func() time.Time { return time.Date(2016, 10, 1, 18, 20, 10, 123, time.FixedZone("GMT+1", 3600)) }
+func MockClock(enabled bool) {
+	if enabled {
+		clock = func() time.Time { return time.Date(2016, 10, 1, 18, 20, 10, 123, time.FixedZone("GMT+1", 3600)) }
+	} else {
+		clock = time.Now
+	}
 }
 
 type logEntry struct {

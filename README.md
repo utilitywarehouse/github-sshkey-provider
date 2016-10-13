@@ -8,7 +8,7 @@ There are two components to this system service:
 - The collector: a Deployment and a Service which will collect the SSH keys from GitHub
 - The agent: a Daemonset which reads the SSH keys from the collector and applies it to the system's `authorized_keys` file
 
-These two components use a `redis` server to communicate.
+These two components communicate over HTTP.
 
 ## Configuration
 The configuration is set through environment variables and a kubernetes Secret. The manifests for these can be found in [utilitywarehouse/kubernetes-manifests](https://github.com/utilitywarehouse/kubernetes-manifests) in the system namespace.

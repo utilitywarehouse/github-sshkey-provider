@@ -89,7 +89,7 @@ func TestKeyCollector_GetTeamMemberInfo(t *testing.T) {
 	mockInstallHandlers([]string{"orgTeams", "userKeys", "userInfo", "teamUserList"})
 	defer mockTeardown()
 
-	miExpected := UserInfoList{
+	miExpected := []UserInfo{
 		UserInfo{
 			Login: "user",
 			ID:    999999,
@@ -193,49 +193,5 @@ func TestKeyCollector_getUserKeys_notFound(t *testing.T) {
 
 	if mi != "" {
 		t.Errorf("KeyCollector.getUserKeys returned unexpected value: %v", mi)
-	}
-}
-
-func TestKeyCollector_setUserName_error(t *testing.T) {
-	ui := UserInfo{
-		Login: "user",
-		ID:    999999,
-		Name:  "unknown name",
-		Keys:  "",
-	}
-
-	uiExpected := UserInfo{
-		Login: "user",
-		ID:    999999,
-		Name:  "unknown name",
-		Keys:  "",
-	}
-
-	testKeyCollector.setUserName(&ui)
-
-	if !reflect.DeepEqual(ui, uiExpected) {
-		t.Errorf("KeyCollector.setUserName returned unexpected value: %v", ui)
-	}
-}
-
-func TestKeyCollector_setUserKeys_error(t *testing.T) {
-	ui := UserInfo{
-		Login: "user",
-		ID:    999999,
-		Name:  "unknown name",
-		Keys:  "",
-	}
-
-	uiExpected := UserInfo{
-		Login: "user",
-		ID:    999999,
-		Name:  "unknown name",
-		Keys:  "",
-	}
-
-	testKeyCollector.setUserKeys(&ui)
-
-	if !reflect.DeepEqual(ui, uiExpected) {
-		t.Errorf("KeyCollector.setUserKeys returned unexpected value: %v", ui)
 	}
 }

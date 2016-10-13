@@ -1,6 +1,7 @@
 package gskp
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -15,15 +16,18 @@ func init() {
 	simplelog.DebugEnabled = true
 }
 
-func startNewTestHTTPServer() *HTTPServer {
-	h := NewHTTPServer()
+func startNewTestServer() *Server {
+	testKeyCache = NewKeyCache("none", "", 5*time.Second)
+	testKeyCache.collector = testKeyCollector
 
-	h.HandleGet("/long_operation", func(w http.ResponseWriter, r *http.Request) {
+	h, _ := NewServer(testKeyCache)
+
+	h.mux.HandleFunc("/long_operation", func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(5 * time.Second)
 		fmt.Fprintf(w, "this was a long operation")
 	})
 
-	go h.Listen(":35432", 10)
+	go h.Start(":35432", 10)
 	time.Sleep(100 * time.Millisecond)
 
 	return h
@@ -34,14 +38,14 @@ func testGetResponse(t *testing.T, endpoint string, expectedResponse string) {
 	if err != nil {
 		t.Fatalf("Error when trying to GET the %s endpoint: %v", endpoint, err)
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("Error when reading the response from the %s endpoint: %v", endpoint, err)
 	}
-	resp.Body.Close()
 
-	if string(body) != expectedResponse {
+	if !bytes.Equal(body, []byte(expectedResponse)) {
 		t.Errorf("Unexpected response from the %s endpoint: %s", endpoint, body)
 	}
 }
@@ -77,9 +81,9 @@ var testEndpointsMap = map[string]string{
 	"long_operation": `this was a long operation`,
 }
 
-func TestHTTPServer_endpoints(t *testing.T) {
-	h := startNewTestHTTPServer()
-	defer h.StopListening(10)
+func TestServer_endpoints(t *testing.T) {
+	h := startNewTestServer()
+	defer h.Stop(10 * time.Second)
 
 	for endpoint, expected := range testEndpointsMap {
 		testGetResponse(t, endpoint, expected)
@@ -87,18 +91,18 @@ func TestHTTPServer_endpoints(t *testing.T) {
 }
 
 var testUnsupportedMethodsList = map[string]string{
-	"POST":    `{"error":"method not allowed"}`,
-	"PUT":     `{"error":"method not allowed"}`,
-	"DELETE":  `{"error":"method not allowed"}`,
+	"POST":    `{"error":"invalid method"}`,
+	"PUT":     `{"error":"invalid method"}`,
+	"DELETE":  `{"error":"invalid method"}`,
 	"HEAD":    "",
-	"OPTIONS": `{"error":"method not allowed"}`,
-	"CONNECT": `{"error":"method not allowed"}`,
-	"TRACE":   `{"error":"method not allowed"}`,
+	"OPTIONS": `{"error":"invalid method"}`,
+	"CONNECT": `{"error":"invalid method"}`,
+	"TRACE":   `{"error":"invalid method"}`,
 }
 
-func TestHTTPServer_unsupportedMethod(t *testing.T) {
-	h := startNewTestHTTPServer()
-	defer h.StopListening(10)
+func TestServer_unsupportedMethod(t *testing.T) {
+	h := startNewTestServer()
+	defer h.Stop(10 * time.Second)
 
 	for endpoint := range testEndpointsMap {
 		for method, expected := range testUnsupportedMethodsList {
@@ -107,35 +111,54 @@ func TestHTTPServer_unsupportedMethod(t *testing.T) {
 	}
 }
 
-func TestHTTPServer_connectionDrain(t *testing.T) {
-	wg := &sync.WaitGroup{}
-
-	h := startNewTestHTTPServer()
+func TestServer_connectionDrain(t *testing.T) {
+	h := startNewTestServer()
 	time.Sleep(100 * time.Millisecond)
 
+	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	var body []byte
 	go func() {
 		defer wg.Done()
 
-		resp, err := http.Get("http://localhost:35432/long_operation")
-		if err != nil {
-			t.Fatalf("Error when trying to GET the status page: %v", err)
-		}
-		defer resp.Body.Close()
-
-		body, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Error when reading the response from the status page: %v", err)
-		}
+		testGetResponse(t, "long_operation", "this was a long operation")
 	}()
 	time.Sleep(100 * time.Millisecond)
 
-	h.StopListening(10)
+	h.Stop(10 * time.Second)
 
 	wg.Wait()
+}
 
-	if string(body) != `this was a long operation` {
-		t.Errorf("Status page contained unexpected response: %s", string(body))
-	}
+func TestServer_keys(t *testing.T) {
+	mockSetup()
+	mockInstallHandlers([]string{"orgTeams", "userKeys", "userInfo", "teamUserList"})
+	defer mockTeardown()
+
+	h := startNewTestServer()
+	defer h.Stop(time.Second)
+
+	dataExpected := `{"keys":[{"login":"user","id":999999,"name":"User Name","keys":"ssh-rsa this_will_be_a_really_really_really_long_ssh_key_string"}]}`
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	// this go func will test longpolling
+	go func() {
+		defer wg.Done()
+		testGetResponse(t, "keys?team=Owners", dataExpected)
+	}()
+
+	// this is to test the init functionality of the endpoint
+	// it will also unblock the request in the go func above
+	testGetResponse(t, "keys?init=true&team=Owners", dataExpected)
+
+	wg.Wait()
+}
+
+func TestServer_keys_erros(t *testing.T) {
+	h := startNewTestServer()
+	defer h.Stop(time.Second)
+
+	testGetResponse(t, "keys?init=true", `{"error":"invalid team value"}`)
+	testGetResponse(t, "keys?init=0&team=none", `{"error":"invalid init value"}`)
 }

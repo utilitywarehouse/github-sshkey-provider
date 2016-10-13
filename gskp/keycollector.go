@@ -24,6 +24,15 @@ var (
 	defaultGithubKeysURL = "https://github.com/%s.keys"
 )
 
+// UserInfo is a struct that contains information about a GitHub user,
+// including Login Name and SSH Keys.
+type UserInfo struct {
+	Login string `json:"login"`
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Keys  string `json:"keys"`
+}
+
 // KeyCollector fetches user information and their public SSH keys from GitHub.
 type KeyCollector struct {
 	githubClient  *github.Client
@@ -47,22 +56,6 @@ func NewKeyCollector(githubAccessToken string) *KeyCollector {
 	}
 }
 
-// GetTeamMemberInfo returns a slice of UserInfo structs, which contains
-// information on the users that belong to the specified GitHub team.
-func (k *KeyCollector) GetTeamMemberInfo(teamID int) (UserInfoList, error) {
-	memberInfo, err := k.getTeamMembers(teamID)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range memberInfo {
-		k.setUserName(&memberInfo[i])
-		k.setUserKeys(&memberInfo[i])
-	}
-
-	return memberInfo, nil
-}
-
 // GetTeamID finds the GitHub team id, based on the organization and team
 // names.
 func (k *KeyCollector) GetTeamID(organizationName string, teamName string) (int, error) {
@@ -84,8 +77,10 @@ func (k *KeyCollector) GetTeamID(organizationName string, teamName string) (int,
 	return -1, ErrTeamNotFound
 }
 
-func (k *KeyCollector) getTeamMembers(teamID int) (UserInfoList, error) {
-	memberInfo := UserInfoList{}
+// GetTeamMemberInfo returns a slice of UserInfo structs, which contains
+// information on the users that belong to the specified GitHub team.
+func (k *KeyCollector) GetTeamMemberInfo(teamID int) ([]UserInfo, error) {
+	memberInfo := []UserInfo{}
 
 	ltmOpts := &github.OrganizationListTeamMembersOptions{
 		Role: "all",
@@ -111,7 +106,25 @@ func (k *KeyCollector) getTeamMembers(teamID int) (UserInfoList, error) {
 				Keys:  "",
 			}
 
-			memberInfo = append(memberInfo, ui)
+			user, _, err := k.githubClient.Users.GetByID(*tm.ID)
+			if err != nil {
+				simplelog.Infof("Could not fetch details for user '%s': %v", *tm.Login, err)
+			} else if user.Name != nil {
+				ui.Name = *user.Name
+			}
+
+			keys, err := k.getUserKeys(*tm.Login)
+			if err != nil {
+				simplelog.Infof("Could not fetch keys for user '%s': %v", *tm.Login, err)
+			} else {
+				ui.Keys = keys
+			}
+
+			if ui.Keys == "" {
+				simplelog.Infof("No public SSH keys for user '%s'", *tm.Login)
+			} else {
+				memberInfo = append(memberInfo, ui)
+			}
 		}
 
 		if resp.NextPage == 0 {
@@ -122,24 +135,6 @@ func (k *KeyCollector) getTeamMembers(teamID int) (UserInfoList, error) {
 	}
 
 	return memberInfo, nil
-}
-
-func (k *KeyCollector) setUserName(ui *UserInfo) {
-	user, _, err := k.githubClient.Users.GetByID(ui.ID)
-	if err != nil {
-		simplelog.Infof("Could not fetch details for user '%s': %v", ui.Login, err)
-	} else {
-		ui.Name = *user.Name
-	}
-}
-
-func (k *KeyCollector) setUserKeys(ui *UserInfo) {
-	keys, err := k.getUserKeys(ui.Login)
-	if err != nil {
-		simplelog.Infof("Could not fetch keys for user '%s': %s", ui.Login, err.Error())
-	} else {
-		ui.Keys = keys
-	}
 }
 
 func (k *KeyCollector) getUserKeys(userLogin string) (string, error) {
