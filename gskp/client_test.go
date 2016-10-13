@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alkar/gss/pkg/simplelog"
+	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
 
 var (
