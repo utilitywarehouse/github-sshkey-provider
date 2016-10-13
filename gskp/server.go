@@ -10,6 +10,7 @@ import (
 
 	"gopkg.in/tylerb/graceful.v1"
 
+	"github.com/rs/xid"
 	"github.com/utilitywarehouse/github-sshkey-provider/gskp/simplelog"
 )
 
@@ -47,7 +48,7 @@ type Server struct {
 	server                   *graceful.Server
 	updateManagerIsActive    bool
 	updateManagerStopped     chan bool
-	updateManagerQueue       map[string][]chan bool
+	updateManagerQueue       map[string]map[string]chan bool
 	updateManagerQueueMuxtex *sync.Mutex
 }
 
@@ -60,7 +61,7 @@ func NewServer(cache *KeyCache) (*Server, error) {
 		cache:                    cache,
 		mux:                      mux,
 		updateManagerStopped:     make(chan bool),
-		updateManagerQueue:       map[string][]chan bool{},
+		updateManagerQueue:       map[string]map[string]chan bool{},
 		updateManagerQueueMuxtex: &sync.Mutex{},
 	}
 
@@ -111,21 +112,21 @@ func (s *Server) updateManager() {
 		case team := <-s.cache.Updates:
 			simplelog.Infof("received update message for team '%s', notifying clients", team)
 
+			s.updateManagerQueueMuxtex.Lock()
 			_, exists := s.updateManagerQueue[team]
 			if exists {
-				for _, p := range s.updateManagerQueue[team] {
+				for _, notifier := range s.updateManagerQueue[team] {
 					select {
-					case p <- true:
+					case notifier <- true:
 					default:
 					}
 				}
 
 				simplelog.Debugf("notified %d clients", len(s.updateManagerQueue[team]))
-
-				s.updateManagerQueue[team] = []chan bool{}
 			} else {
 				simplelog.Debugf("no clients are polling for team '%s'", team)
 			}
+			s.updateManagerQueueMuxtex.Unlock()
 		case <-time.After(updateManagerInterval):
 		}
 	}
@@ -133,15 +134,25 @@ func (s *Server) updateManager() {
 	s.updateManagerStopped <- true
 }
 
-func (s *Server) updateManagerGetNotifier(teamName string) chan bool {
-	s.updateManagerQueueMuxtex.Lock()
-	defer s.updateManagerQueueMuxtex.Unlock()
-
+func (s *Server) updateManagerGetNotifier(teamName string) (string, chan bool) {
 	notifier := make(chan bool)
+	notifierID := xid.New().String()
 
-	s.updateManagerQueue[teamName] = append(s.updateManagerQueue[teamName], notifier)
+	s.updateManagerQueueMuxtex.Lock()
+	if _, exists := s.updateManagerQueue[teamName]; !exists {
+		s.updateManagerQueue[teamName] = map[string]chan bool{}
+	}
+	s.updateManagerQueue[teamName][notifierID] = notifier
+	s.updateManagerQueueMuxtex.Unlock()
 
-	return notifier
+	return notifierID, notifier
+}
+
+func (s *Server) updateManagerRemoveNotifier(teamName string, notifierID string) {
+	s.updateManagerQueueMuxtex.Lock()
+	close(s.updateManagerQueue[teamName][notifierID])
+	delete(s.updateManagerQueue[teamName], notifierID)
+	s.updateManagerQueueMuxtex.Unlock()
 }
 
 func (s *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
@@ -202,12 +213,13 @@ func (s *Server) keysHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	timeoutTimer := time.NewTimer(timeoutDuration)
-	update := s.updateManagerGetNotifier(team)
+	notifierID, notifier := s.updateManagerGetNotifier(team)
+	defer s.updateManagerRemoveNotifier(team, notifierID)
 
-	simplelog.Debugf("new longpoll connection for team '%s' from '%s'", team, r.RemoteAddr)
+	simplelog.Debugf("new longpoll connection '%s' from '%s' for team '%s'", notifierID, r.RemoteAddr, team)
 
 	select {
-	case <-update:
+	case <-notifier:
 		timeoutTimer.Stop()
 
 		if err := s.sendData(w, team); err != nil {
@@ -216,7 +228,7 @@ func (s *Server) keysHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case <-timeoutTimer.C:
-		simplelog.Debugf("timing out longpoll connection for team '%s' from '%s'", team, r.RemoteAddr)
+		simplelog.Debugf("timing out longpoll connection '%s' from '%s' for team '%s'", notifierID, r.RemoteAddr, team)
 		s.respond(w, http.StatusOK, serverLongpollTimeout)
 		return
 	}

@@ -1,14 +1,14 @@
-hash: e019db620abbeb088fe3eea6e1cb0a0bfd2ad8c643a648934f32995c34d45eca
-updated: 2016-10-12T16:28:31.525813883+01:00
+hash: 12614bd31e565cd4cf4e4901e5fe98c7d95ae4d257d076d87cd9614e522c03c4
+updated: 2016-10-13T15:11:50.030020651+01:00
 imports:
 - name: github.com/fsnotify/fsnotify
-  version: 629574ca2a5df945712d3079857300b5e4da0236
+  version: bd2828f9f176e52d7222e565abb2d338d3f3c103
 - name: github.com/golang/protobuf
-  version: df1d3ca07d2d07bba352d5b73c4313b4e2a6203e
+  version: 98fa357170587e470c5f27d3c3ea0947b71eb455
   subpackages:
   - proto
 - name: github.com/google/go-github
-  version: a1746f282059a5d71c4d8a270753698e164151e5
+  version: 93d3f730320429a6e1ecf2ac1778db832930948a
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -42,6 +42,8 @@ imports:
   version: 839d9e913e063e28dfd0e6c7b7512793e0a48be9
 - name: github.com/pkg/sftp
   version: 4d0e916071f68db74f8a73926335f809396d6b42
+- name: github.com/rs/xid
+  version: 057f3c928c207d1e7e318929eeac93bb46e319e3
 - name: github.com/spf13/afero
   version: 52e4a6cfac46163658bd4f123c49b6ee7dc75f78
   subpackages:
@@ -56,16 +58,16 @@ imports:
 - name: github.com/spf13/pflag
   version: bf8481a6aebc13a8aab52e699ffe2e79771f5a3f
 - name: github.com/spf13/viper
-  version: c14ce6d43cf5e22e2bd44938f3f45a2761c18350
+  version: 44208030b391907a5ec5c5658470bdb6e6169073
 - name: golang.org/x/crypto
-  version: 4cd25d65a015cc83d41bf3454e6e8d6c116d16da
+  version: 5f31782cfb2b6373211f8f9fbf31283fa234b570
   subpackages:
   - curve25519
   - ed25519
   - ed25519/internal/edwards25519
   - ssh
 - name: golang.org/x/net
-  version: 6dba816f1056709e29a1c442883cab1336d3c083
+  version: 8b4af36cd21a1f85a7484b49feb7c79363106d8e
   subpackages:
   - context
 - name: golang.org/x/oauth2
@@ -77,7 +79,7 @@ imports:
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: afa951a3250e0e2195be7366207189f3184d3fe1
+  version: c745997bb18563e8788428768ce0f034f2b663df
   subpackages:
   - transform
   - unicode/norm

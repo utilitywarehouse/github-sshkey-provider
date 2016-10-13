@@ -8,3 +8,4 @@ import:
 - package: golang.org/x/oauth2
 - package: gopkg.in/tylerb/graceful.v1
   version: v1.2.13
+- package: github.com/rs/xid
