@@ -4,13 +4,15 @@ jobs:
     docker:
       - image: alpine:latest
     working_directory: /go/src/github.com/utilitywarehouse/$CIRCLE_PROJECT_REPONAME
+    environment:
+      REGISTRY_REPO: registry.uw.systems/system
     steps:
       - checkout
       - setup_remote_docker
       - run: |
           apk add --no-cache docker
       - run: |
-          docker build -t registry.uw.systems/utilitywarehouse/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 .
-          docker tag registry.uw.systems/utilitywarehouse/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 registry.uw.systems/utilitywarehouse/$CIRCLE_PROJECT_REPONAME:latest
+          docker build -t $REGISTRY_REPO/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 .
+          docker tag $REGISTRY_REPO/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 $REGISTRY_REPO/$CIRCLE_PROJECT_REPONAME:latest
           docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD registry.uw.systems
-          docker push registry.uw.systems/utilitywarehouse/$CIRCLE_PROJECT_REPONAME
+          docker push $REGISTRY_REPO/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 $REGISTRY_REPO/$CIRCLE_PROJECT_REPONAME:latest
