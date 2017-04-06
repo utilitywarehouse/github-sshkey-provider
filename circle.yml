@@ -7,11 +7,12 @@ jobs:
        DOCKER_IMAGE_NAME: registry.uw.systems/utilitywarehouse/$CIRCLE_PROJECT_REPONAME
     working_directory: /tmp
     steps:
+      - checkout
       - setup_remote_docker
       - run: |
-        apk add --no-cache docker
+          apk add --no-cache docker
       - run: |
-        docker build -t $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 .
-        docker tag $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 $DOCKER_IMAGE_NAME:latest
-        docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD registry.uw.systems
-        docker push $DOCKER_IMAGE_NAME
+          docker build -t $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 .
+          docker tag $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 $DOCKER_IMAGE_NAME:latest
+          docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD registry.uw.systems
+          docker push $DOCKER_IMAGE_NAME
