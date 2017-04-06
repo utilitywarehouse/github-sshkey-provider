@@ -8,9 +8,10 @@ jobs:
     working_directory: /tmp
     steps:
       - setup_remote_docker
-      - run: 'apk add --no-cache docker'
+      - run: |
+        apk add --no-cache docker
       - run: |
         docker build -t $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 .
         docker tag $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 $DOCKER_IMAGE_NAME:latest
-        docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+        docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD registry.uw.systems
         docker push $DOCKER_IMAGE_NAME
