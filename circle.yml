@@ -4,8 +4,10 @@ jobs:
     docker:
       - image: alpine:latest
     environment:
-       DOCKER_IMAGE_NAME: registry.uw.systems/utilitywarehouse/$CIRCLE_PROJECT_REPONAME
-    working_directory: /tmp
+       REGISTRY: registry.uw.systems
+       PROJECT_NAME: utilitywarehouse/$CIRCLE_PROJECT_REPONAME
+       DOCKER_IMAGE_NAME: $REGISTRY/$PROJECT_NAME
+    working_directory: /go/src/github.com/$PROJECT_NAME
     steps:
       - checkout
       - setup_remote_docker
@@ -14,5 +16,5 @@ jobs:
       - run: |
           docker build -t $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 .
           docker tag $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 $DOCKER_IMAGE_NAME:latest
-          docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD registry.uw.systems
+          docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD $REGISTRY
           docker push $DOCKER_IMAGE_NAME
