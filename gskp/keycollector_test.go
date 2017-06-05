@@ -179,7 +179,7 @@ func TestKeyCollector_getUserKeys_notFound(t *testing.T) {
 	defer mockTeardown()
 
 	testMux.HandleFunc("/user.keys", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `Not Found`)
+		w.WriteHeader(http.StatusNotFound)
 	})
 
 	mi, err := testKeyCollector.getUserKeys("user")
@@ -187,7 +187,7 @@ func TestKeyCollector_getUserKeys_notFound(t *testing.T) {
 		t.Errorf("KeyCollector.getUserKeys should have returned an error")
 	}
 
-	if err != ErrGithubKeysNotFound {
+	if err != ErrCouldNotFetchGithubKeys {
 		t.Errorf("KeyCollector.getUserKeys returned an unexpected error: %v", err)
 	}
 

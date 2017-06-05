@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	// ErrGithubKeysNotFound is returned when GitHub responds with "Not Found".
-	// when trying to get a user's keys.
-	ErrGithubKeysNotFound = errors.New("Response was 'Not Found'")
+	// ErrCouldNotFetchGithubKeys is returned when GitHub responds with a non-202
+	// HTTP status code.
+	ErrCouldNotFetchGithubKeys = errors.New("Could not fetch SSH keys from Github")
 
 	// ErrTeamNotFound is returned when a team cannot be found in the list of
 	// the organization's teams.
@@ -154,11 +154,10 @@ func (k *KeyCollector) getUserKeys(userLogin string) (string, error) {
 		return "", err
 	}
 
-	keys := strings.TrimSpace(string(body))
-	if keys == "Not Found" {
-		simplelog.Debugf("GitHub responed with 'Not Found' when looking for the keys of user '%s'", userLogin)
-		return "", ErrGithubKeysNotFound
+	if response.StatusCode != http.StatusOK {
+		simplelog.Errorf("Could not fetch keys for user '%s': github returned status code %v", response.StatusCode)
+		return "", ErrCouldNotFetchGithubKeys
 	}
 
-	return keys, nil
+	return strings.TrimSpace(string(body)), nil
 }
