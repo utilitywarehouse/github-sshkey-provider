@@ -1,4 +1,7 @@
-# github-sshkey-provider
+# github-sshkey-provider - deprecated
+
+DEPRECATED in favour of https://github.com/utilitywarehouse/ssh-key-agent
+
 Updates OpenSSH `authorized_keys` files based on GitHub Team membership.
 
 **This repository is not actively developed or supported anymore**
